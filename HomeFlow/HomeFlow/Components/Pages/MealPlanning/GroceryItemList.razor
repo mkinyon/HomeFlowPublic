@@ -1,0 +1,64 @@
+﻿@page "/groceryitems"
+
+<PageTitle>Grocery Items</PageTitle>
+
+<MudTable ServerData="GroceryItemVMData" @ref="table" @bind-SelectedItems="_selectedItems"
+        Hover
+        Striped
+        Height="calc(100vh - 14rem);"
+        Breakpoint="Breakpoint.Sm"
+        LoadingProgressColor="Color.Info"
+        FixedHeader="true"
+        T="GroceryItemVM"
+        MultiSelection
+        OnRowClick="ViewGroceryList">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Grocery Items</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="_searchString" DebounceInterval="500" OnDebounceIntervalElapsed="SearchAsync" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" class="mx-2" @onclick="Add">Add Grocery Item</MudButton>
+        @if ( _selectedItems.Count > 1 )
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Secondary" class="mx-2" @onclick="MergeGroceryItems">Merge</MudButton>
+        }
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortLabel="name" T="GroceryItemVM">Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="itemtype" T="GroceryItemVM">Item Type</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="recipes" T="GroceryItemVM">Recipes</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="grocerylists" T="GroceryItemVM">Grocery Lists</MudTableSortLabel></MudTh>
+        <MudTh>Tags</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Item Type">@context.GroceryItemType</MudTd>
+        <MudTd DataLabel="Recipes">@context.RecipeCount</MudTd>
+        <MudTd DataLabel="Grocery Lists">@context.GroceryListCount</MudTd>
+        <MudTd DataLabel="Tags">
+            <MudStack Row="true">
+                @foreach (var tag in context.Tags.Take(3).ToList())
+                {
+                    <MudChip T="string">@tag</MudChip>
+                }
+                @if ( context.Tags.Count() > 3 )
+                {
+                    <MudText>@(context.Tags.Count() - 3) more...</MudText>
+                }
+            </MudStack>
+        </MudTd>
+        <MudTd Style="text-align:right"><MudIconButton Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => OnDeleteClickAsync(context.Id))" /></MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+<MudMessageBox @ref="_mudMessageBox" Title="Warning" CancelText="Cancel">
+    <MessageContent>
+        Deleting can not be undone!
+    </MessageContent>
+    <YesButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteForever">Delete!</MudButton>
+    </YesButton>
+</MudMessageBox>

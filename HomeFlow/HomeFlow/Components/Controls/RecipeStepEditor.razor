@@ -1,0 +1,63 @@
+﻿@using HomeFlow.Extensions
+@using HomeFlow.Features.MealPlanning.Recipes
+@using MudBlazor
+@if ( Recipe != null )
+{
+    <MudDropContainer @ref="_dropContainer" T="RecipeStep" Items="Recipe.RecipeSteps" ItemDropped="ReorderItems" ItemsSelector="@((item,dropzone) => string.Empty == dropzone)">
+        <ChildContent>
+            <MudDropZone T="RecipeStep" Identifier="" AllowReorder="true" />
+        </ChildContent>
+        <ItemRenderer>
+            <RecipeStepRow Recipe="Recipe" Step="@context" OnNotifyParent="HandleNotification" />
+        </ItemRenderer>
+    </MudDropContainer>
+}
+<MudButton OnClick="AddNew" Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary">Add Step</MudButton>
+
+@code {
+    [Parameter]
+    public Recipe? Recipe { get; set; }
+
+    private MudDropContainer<RecipeStep> _dropContainer = new();
+
+    private void AddNew()
+    {
+        Recipe?.RecipeSteps.Add( new RecipeStep{ Text = "", Order = Recipe.RecipeSteps.Count } );
+        _dropContainer.Refresh();
+    }
+
+    private void ReorderItems( MudItemDropInfo<RecipeStep> dropInfo )
+    {
+        if ( Recipe == null || dropInfo.Item == null )
+        {
+            return;
+        }
+
+        int oldIndex = Recipe.RecipeSteps.IndexOf( dropInfo.Item );
+        if ( oldIndex < 0 )
+            return;
+
+        Recipe.RecipeSteps.Reorder( oldIndex, dropInfo.IndexInZone );
+        Console.WriteLine( $"here {oldIndex}-{dropInfo.IndexInZone}" );
+        foreach ( var test in Recipe.RecipeSteps )
+        {
+            Console.WriteLine( $"here {test.Text}-{test.Order}" );
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        _dropContainer.Refresh();
+    }
+
+    private void HandleNotification()
+    {
+        for( int i = 0; i < Recipe!.RecipeSteps.Count(); i++ )
+        {
+            Recipe.RecipeSteps[i].Order = i;
+        }
+
+        _dropContainer.Refresh();
+        StateHasChanged();
+    }
+}

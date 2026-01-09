@@ -1,0 +1,25 @@
+﻿
+@using HomeFlow.Features.Core.FamilyMembers
+@using MudBlazor
+
+@foreach (var member in FamilyMembers)
+{
+    <FamilyMemberRow FamilyMembers="FamilyMembers" FamilyMember="@member" OnNotifyParent="HandleNotification" />
+}
+
+<MudButton OnClick="AddNew" Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary">Add Family Member</MudButton>
+
+@code {
+    [Parameter]
+    public List<FamilyMember> FamilyMembers { get; set; } = new List<FamilyMember>();
+
+    private void AddNew()
+    {
+        FamilyMembers.Add( new FamilyMember { } );
+    }
+
+    private void HandleNotification()
+    {
+        StateHasChanged();
+    }
+}

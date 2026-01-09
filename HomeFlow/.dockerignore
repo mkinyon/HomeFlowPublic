@@ -1,0 +1,35 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vs/
+.vscode/
+*.user
+
+# Build outputs
+**/bin/
+**/obj/
+
+# Test projects
+**/Tests/
+**/*.Tests/
+
+# Logs
+*.log
+
+# Database files (will be mounted as volume)
+**/LocalStorage/Database/
+
+# Temporary files
+*.tmp
+*.temp
+
+# OS generated files
+.DS_Store
+Thumbs.db 

@@ -1,0 +1,193 @@
+﻿
+
+@using HomeFlow.Features.MealPlanning.GroceryItems
+@using HomeFlow.Features.MealPlanning.Recipes
+@using MudBlazor
+@inject IGroceryItemService GroceryItemService
+
+<MudPaper Class="pa-2 my-2" Elevation="0">
+    <MudGrid>
+        <MudItem xs="12" sm="1">
+            <MudIcon Icon="@Icons.Material.Filled.Reorder" />
+        </MudItem>
+        <MudItem xs="6" sm="1">
+            <MudNumericField @bind-Value="RecipeGroceryItem.Quantity" For="@(() => RecipeGroceryItem.Quantity)" Label="Qty" />
+        </MudItem>
+        <MudItem xs="6" sm="1">
+            <MudSelect @bind-Value="RecipeGroceryItem.MeasurementFraction" Label="Fraction">
+                <MudSelectItem Value="MeasurementFraction.None">None</MudSelectItem>
+                <MudSelectItem Value="MeasurementFraction.Quarter">1/4</MudSelectItem>
+                <MudSelectItem Value="MeasurementFraction.Third">1/3</MudSelectItem>
+                <MudSelectItem Value="MeasurementFraction.Half">1/2</MudSelectItem>
+                <MudSelectItem Value="MeasurementFraction.TwoThirds">2/3</MudSelectItem>
+                <MudSelectItem Value="MeasurementFraction.ThreeQuarters">3/4</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="2">
+            <MudSelect @bind-Value="RecipeGroceryItem.MeasurementType" Label="Measurement">
+                @foreach ( MeasurementType item in Enum.GetValues( typeof( MeasurementType ) ) )
+                {
+                    <MudSelectItem Value="@item">@item</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudAutocomplete T="GroceryItem" @ref="autocomplete" @bind-Value="RecipeGroceryItem.GroceryItem" Label="Grocery Item" items SearchFunc="@SearchGroceryItems" Required Clearable>
+                <BeforeItemsTemplate>
+                    <div class="pa-2">
+                        <MudButton Color="Color.Primary" Variant="Variant.Outlined" OnClick="DLG_GroceryItemOpen" FullWidth>Add Grocery Item</MudButton>
+                        <MudDivider />
+                    </div>
+                </BeforeItemsTemplate>
+            </MudAutocomplete>
+        </MudItem>
+        <MudItem xs="12" sm="2">
+            <MudTextField @bind-Value="RecipeGroceryItem.AdditionalDetail" For="@(() => RecipeGroceryItem.AdditionalDetail)" Label="Additional Detail" />
+        </MudItem>
+        <MudItem xs="12" sm="1">
+            <MudStack Row Justify="Justify.Center">
+                <MudIconButton Icon="@Icons.Material.Filled.AutoFixHigh" Color="Color.Default" OnClick="DLG_GroceryItemTextOpen" />
+                <MudIconButton Icon="@Icons.Material.Outlined.Close" Color="Color.Secondary" OnClick="@(() => RemoveItem(RecipeGroceryItem))" />
+            </MudStack>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<MudDialog @bind-Visible="_dlgGroceryItemVisible" Options="_dlgOptions" TitleClass="h1 mud-theme-primary" Style="min-width: 350px;">
+    <TitleContent>
+        <MudText Typo="Typo.h6">New Grocery Item</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="@_newGroceryItemName" T="string" Label="Name"></MudTextField>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="DLG_GroceryItemCancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="DLG_GroceryItemSubmit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<MudDialog @bind-Visible="_dlgGroceryItemTextVisible" Options="_dlgOptions" TitleClass="h1 mud-theme-primary" Style="min-width: 500px;">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Enter Grocery Item</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudAlert Severity="MudBlazor.Severity.Info" Class="mb-6">
+            <MudText Typo="Typo.body1">Note: Entering a new item will overwrite the current one.</MudText>
+        </MudAlert>
+        <MudTextField @bind-Value="@_newGroceryItemText" T="string" Placeholder="i.e.. 3 1/4 Tablespoons Butter" Label="Name"></MudTextField>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="DLG_GroceryItemTextCancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="DLG_GroceryItemTextSubmit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter]
+    public EventCallback OnNotifyParent { get; set; }
+
+    [Parameter]
+    public Recipe Recipe { get; set; } = default!;
+
+    [Parameter]
+    public RecipeGroceryItem RecipeGroceryItem { get; set; } = new RecipeGroceryItem();
+
+    private bool _dlgGroceryItemVisible;
+    private string _newGroceryItemName { get; set; } = string.Empty;
+    private bool _dlgGroceryItemTextVisible;
+    private string _newGroceryItemText { get; set; } = string.Empty;
+
+    DialogOptions _dlgOptions = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Large
+        };
+
+    public ICollection<GroceryItem>? GroceryItems;
+
+    private MudAutocomplete<GroceryItem> autocomplete = new MudAutocomplete<GroceryItem>();
+
+    private void RemoveItem(RecipeGroceryItem recipeGroceryItem)
+    {
+        Recipe?.RecipeGroceryItems.Remove( recipeGroceryItem );
+
+        OnNotifyParent.InvokeAsync(null);
+    }
+
+    private async Task<IEnumerable<GroceryItem>> SearchGroceryItems(string value, CancellationToken token)
+    {
+        GroceryItems = await GroceryItemService.GetListAsync();
+        if ( GroceryItems == null )
+        {
+            GroceryItems = new List<GroceryItem>();
+        }
+
+        if (string.IsNullOrEmpty(value))
+        {
+            return GroceryItems;
+        }
+
+        return GroceryItems.Where( i => i.Name.Contains( value, StringComparison.InvariantCultureIgnoreCase ) );
+    }
+
+    #region Dialog Add Grocery Item
+
+    private void DLG_GroceryItemOpen()
+    {
+        var options = new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.Large
+            };
+
+        _dlgGroceryItemVisible = true;
+    }
+
+    private async void DLG_GroceryItemSubmit()
+    {
+        var newGroceryItemGuid = await GroceryItemService.CreateAsync( new GroceryItem
+            {
+                Name = _newGroceryItemName
+            } );
+
+        _dlgGroceryItemVisible = false;
+
+        GroceryItems = await GroceryItemService.GetListAsync();
+        RecipeGroceryItem.GroceryItem = GroceryItems.FirstOrDefault( i => i.Id == newGroceryItemGuid )!;
+
+        await autocomplete.CloseMenuAsync();
+
+        StateHasChanged();
+    }
+
+    private void DLG_GroceryItemCancel() => _dlgGroceryItemVisible = false;
+
+    #endregion
+
+    #region Dialog Add Grocery Item Text
+
+    private void DLG_GroceryItemTextOpen()
+    {
+        var options = new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.Large
+            };
+
+        _dlgGroceryItemTextVisible = true;
+    }
+
+    private void DLG_GroceryItemTextSubmit()
+    {
+        RecipeGroceryItem.ExtractDetailsFromText( _newGroceryItemText );
+
+        _newGroceryItemText = string.Empty;
+        _dlgGroceryItemTextVisible = false;
+
+        StateHasChanged();
+    }
+
+    private void DLG_GroceryItemTextCancel() => _dlgGroceryItemTextVisible = false;
+
+    #endregion
+}

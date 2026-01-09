@@ -1,0 +1,51 @@
+﻿@page "/grocerystores"
+
+<PageTitle>Grocery Stores</PageTitle>
+
+@if (_errorMessage != string.Empty)
+{
+    <MudAlert Severity="MudBlazor.Severity.Error" Class="my-7">@_errorMessage</MudAlert>
+}
+else
+{
+    <MudTable ServerData="GroceryListData" @ref="table"
+        Hover
+        Striped
+        Height="calc(100vh - 14rem);"
+        Breakpoint="Breakpoint.Sm" 
+        LoadingProgressColor="Color.Info"
+        FixedHeader="true"
+        T="GroceryStore"
+        OnRowClick="ViewGroceryStore">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Grocery Stores</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="_searchString" DebounceInterval="500" OnDebounceIntervalElapsed="SearchAsync" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" class="mx-2" @onclick="NewGroceryStore">Add Grocery Store</MudButton>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh><MudTableSortLabel SortLabel="name" T="GroceryStore">Name</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortLabel="locations" T="GroceryStore">Location</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortLabel="aisles" T="GroceryStore">Aisles</MudTableSortLabel></MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">@context.Name</MudTd>
+            <MudTd DataLabel="Location">@context.Location</MudTd>
+            <MudTd DataLabel="Aisles">@context.GroceryStoreAisles.Count()</MudTd>
+            <MudTd Style="text-align:right"><MudIconButton Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => DeleteGroceryListAsync(context.Id))" /></MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
+}
+
+<MudMessageBox @ref="_mudMessageBox" Title="Warning" CancelText="Cancel">
+    <MessageContent>
+        Deleting can not be undone!
+    </MessageContent>
+    <YesButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteForever">Delete!</MudButton>
+    </YesButton>
+</MudMessageBox>

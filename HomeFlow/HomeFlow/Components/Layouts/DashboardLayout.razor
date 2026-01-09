@@ -1,0 +1,115 @@
+@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<MudThemeProvider Theme="@_theme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<div class="dashboard-layout">  
+    <div class="dashboard-content">
+        <ErrorBoundary>
+            <ChildContent>
+                @Body
+            </ChildContent>
+            <ErrorContent Context="ex">
+                <div class="error-container">
+                    <h1>Exception</h1>
+                    <p>@ex.Message</p>
+                    <p>@ex.InnerException?.Message</p>
+                </div>
+            </ErrorContent>
+        </ErrorBoundary>
+    </div>
+</div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+<style>
+    .dashboard-layout {
+        height: 100vh;
+        width: 100vw;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: var(--mud-palette-background);
+    }
+
+    .dashboard-header {
+        display: flex;
+        align-items: center;
+        padding: 8px 16px;
+        background: var(--mud-palette-appbar-background);
+        border-bottom: 1px solid var(--mud-palette-lines-default);
+        backdrop-filter: blur(10px);
+        z-index: 1000;
+        min-height: 56px;
+    }
+
+    .dashboard-content {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .error-container {
+        padding: 20px;
+        text-align: center;
+    }
+
+    .mud-divider {
+        border-width: 3px;
+    }
+
+    .widget-summary {
+        color: white;
+        background: var(--mud-palette-primary);
+        background: linear-gradient( 135deg, var(--mud-palette-primary) 36%, var(--mud-palette-secondary) 100% );
+    }
+
+    /* Ensure full screen on mobile */
+    @@media (max-width: 768px) {
+        .dashboard-layout {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+    }
+</style>
+
+@code {
+    private MudTheme? _theme = null;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        _theme = new()
+        {
+            PaletteLight = _lightPalette,
+            LayoutProperties = new LayoutProperties()
+        };
+    }
+
+    private readonly PaletteLight _lightPalette = new()
+    {
+        Black = "#110e2d",
+        AppbarText = "#424242",
+        AppbarBackground = "rgba(255,255,255,0.9)",
+        DrawerBackground = "#ffffff",
+        GrayLight = "#e8e8e8",
+        GrayLighter = "#f9f9f9",
+        Background = "#ffffff",
+
+        // Homeflow Colors
+        Primary = "#2EAF7D",
+        Secondary = "#3FD0C9"
+    };
+}

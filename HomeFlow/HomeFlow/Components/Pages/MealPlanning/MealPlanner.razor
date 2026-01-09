@@ -1,0 +1,75 @@
+﻿@page "/mealplanner"
+
+<PageTitle>Meal Planner</PageTitle>
+
+<style>
+    .mud-cal-drop-item {
+        padding-left: 7px;
+        padding-right: 7px;
+        padding-top: 1px;
+        padding-bottom: 1px;
+    }
+</style>
+
+@if (_isLoading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+}
+else
+{
+    <MudCalendar 
+    Items="_recipeDropItems"
+    EnableDragItems="true" 
+    ShowWeek="false" 
+    ShowDay="false" 
+    MonthCellMinHeight="150"
+    CellClicked="AddRecipe" 
+    DateRangeChanged="DateRangeChangedAsync" 
+    ItemChanged="@((CalendarItem item) => ItemChanged(item))">
+        <ToolbarContent>
+            @if (ItemsSelected)
+            {
+                
+                    <MudMenu>
+                        <ActivatorContent>
+                            <MudTooltip Text="Add selected items to grocery list">
+                                <MudIconButton Icon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Medium" />
+                            </MudTooltip>
+                        </ActivatorContent>
+                        <ChildContent>
+                            @foreach ( var list in _groceryLists )
+                            {
+                                <MudMenuItem Label="@list.Name" OnClick="@(() => AddRecipesAsync(list.Id))" />
+                            }
+                        </ChildContent>
+                    </MudMenu>
+                    
+                
+                <MudTooltip Text="Delete selected items">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Filled" Color="Color.Error" Size="Size.Medium" OnClick="DeleteItemsAsync" Class="mx-1" />
+                </MudTooltip>
+                
+            }
+
+        </ToolbarContent>
+        <CellTemplate>
+            <MudButton 
+                Style="width: 100%;"
+                Size="Size.Small"
+                       Variant="@GetButtonVariant((RecipeDropItem)context)"
+                       Color="@GetButtonColor((RecipeDropItem)context)"
+                OnClick="@(() => ((RecipeDropItem)context).Selected = !((RecipeDropItem)context).Selected)">
+                @context.Text
+            </MudButton>
+        </CellTemplate>
+    </MudCalendar>
+}
+
+<MudMessageBox @ref="_mudMessageBox" Title="Warning" CancelText="Cancel">
+    <MessageContent>
+        Deleting can not be undone!
+    </MessageContent>
+    <YesButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteForever">Delete!</MudButton>
+    </YesButton>
+</MudMessageBox>

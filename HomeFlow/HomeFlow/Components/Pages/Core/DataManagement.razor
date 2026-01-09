@@ -1,0 +1,159 @@
+﻿@page "/datamanagement"
+
+<PageTitle>Data Management</PageTitle>
+
+<script>
+    function downloadFile(fileName, contentType, base64Data) {
+    const blob = new Blob([Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))], { type: contentType });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    }
+</script>
+
+<style>
+    button {
+        height: 64px;
+        min-width: 150px !important;
+    }
+</style>
+
+<MudContainer>
+    <MudPaper Class="pa-8">
+        <MudGrid Class="pa-4">
+            <MudItem sm="12">
+                <MudStack Row="true">
+                    <MudIcon Icon="@Icons.Material.Filled.AutoFixHigh" Style="font-size: 4rem;" />
+
+                    <MudGrid>
+                        <MudItem sm="12">
+                            <MudText Typo="Typo.h6">Optimize</MudText>
+                            <MudText>Optimize HomeFlow by cleaning up any unused images.</MudText>
+                        </MudItem>
+                    </MudGrid>
+
+                    <MudButton Variant="Variant.Outlined"
+                    Color="Color.Primary"
+                    Disabled="@IsLoading"
+                    OnClick="OptimizeAsync">
+                        Run
+                    </MudButton>
+                </MudStack>
+
+                @if ( _isOptimizing )
+                {
+                    <MudProgressLinear Color="Color.Primary" Size="Size.Large" Indeterminate="true" Class="my-7" />
+                }
+            </MudItem>
+        </MudGrid>
+
+        <MudDivider />
+
+        <MudGrid Class="pa-4">
+            <MudItem sm="12">
+                <MudStack Row="true">
+                    <MudIcon Icon="@Icons.Material.Filled.Upload" Style="font-size: 4rem;" />
+
+                    <MudGrid>
+                        <MudItem sm="12">
+                            <MudText Typo="Typo.h6">Import Data</MudText>
+                            <MudText>Run this task to import data from a backup. NOTE: This will replace all data and settings!</MudText>
+                        </MudItem>
+                    </MudGrid>
+
+                    <MudFileUpload T="IBrowserFile" Accept=".zip" FilesChanged="ImportDataAsync">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Outlined"
+                            Color="Color.Primary"
+                            Disabled="@IsLoading">
+                                Run
+                            </MudButton>
+                        </ActivatorContent>
+                    </MudFileUpload>
+                </MudStack>
+
+                @if ( _isImportingData )
+                {
+                    <MudProgressLinear Color="Color.Primary" Size="Size.Large" Indeterminate="true" Class="my-7" />
+                }
+            </MudItem>
+        </MudGrid>
+
+        <MudDivider />
+
+        <MudGrid Class="pa-4">
+            <MudItem sm="12">
+                <MudStack Row="true">
+                    <MudIcon Icon="@Icons.Material.Filled.FileDownload" Style="font-size: 4rem;" />
+
+                    <MudGrid>
+                        <MudItem sm="12">
+                            <MudText Typo="Typo.h6">Export All Data</MudText>
+                            <MudText>Export all data and images to a backup archive.</MudText>
+                        </MudItem>
+                    </MudGrid>
+
+                    <MudButton Variant="Variant.Outlined"
+                    Color="Color.Primary"
+                    Disabled="@IsLoading"
+                    OnClick="ExportDataAsync">
+                        Run
+                    </MudButton>
+                </MudStack>
+
+                @if ( _isExportingdata )
+                {
+                    <MudProgressLinear Color="Color.Primary" Size="Size.Large" Indeterminate="true" Class="my-7" />
+                }
+            </MudItem>
+        </MudGrid>
+
+        <MudDivider />
+
+        <MudGrid Class="pa-4">
+            <MudItem sm="12">
+                <MudStack Row="true">
+                    <MudIcon Icon="@Icons.Material.Filled.LibraryBooks" Style="font-size: 4rem;" />
+
+                    <MudGrid>
+                        <MudItem sm="12">
+                            <MudText Typo="Typo.h6">Generate Sample Data</MudText>
+                            <MudText>Fills the database with sample data.  Useful for trying out HomeFlow.</MudText>
+                        </MudItem>
+                    </MudGrid>
+
+                    @if ( IsDatabaseSeeded )
+                    {
+                        <MudTooltip Text="Database has already been seeded with sample data." Arrow Placement="Placement.Top">
+                            <MudButton Variant="Variant.Outlined"
+                            Color="Color.Primary"
+                            Disabled="@IsDatabaseSeeded"
+                            OnClick="SeedDatabaseAsync">
+                                Run
+                            </MudButton>
+                        </MudTooltip>
+                    }
+                    else
+                    {
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Primary"
+                                   Disabled="@IsLoading"
+                                   OnClick="SeedDatabaseAsync">
+                            Run
+                        </MudButton>
+                    }
+                </MudStack>
+
+                @if ( _isRunningSeedDatabase )
+                {
+                    <MudProgressLinear Color="Color.Primary" Size="Size.Large" Indeterminate="true" Class="my-7" />
+                }
+            </MudItem>
+        </MudGrid>
+
+    </MudPaper>
+</MudContainer>
+

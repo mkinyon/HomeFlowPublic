@@ -1,0 +1,71 @@
+@namespace MudBlazor
+@using HomeFlow.Features.Core.FamilyMembers
+@using HomeFlow.Features.Tasks.TodoLists
+
+<MudDialog TitleClass="h1 mud-theme-primary">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Edit Todo Item Details</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm Model="TodoItem">
+            <MudDatePicker T="DateTime?" 
+                          @bind-Date="TodoItem.DueDate" 
+                          Label="Due Date" 
+                          DateFormat="MMM dd, yyyy"
+                          Variant="Variant.Outlined"
+                          Clearable="true" />
+            
+            <MudSelect T="FamilyMember" 
+                      @bind-Value="TodoItem.AssignedFamilyMember"
+                      Label="Assign To"
+                      Variant="Variant.Outlined"
+                      Clearable="true"
+                      Class="mt-4">
+                <MudSelectItem Value="@((FamilyMember?)null)">
+                    <div class="d-flex align-center">
+                        <MudAvatar Size="Size.Small" Class="mr-2">
+                            <MudIcon Icon="@Icons.Material.Filled.Person" />
+                        </MudAvatar>
+                        <span>Unassigned</span>
+                    </div>
+                </MudSelectItem>
+                @foreach (var member in FamilyMembers)
+                {
+                    <MudSelectItem Value="@member">
+                        <div class="d-flex align-center">
+                            <MudAvatar Size="Size.Small" Class="mr-2">
+                                @if (member.Image != null && !string.IsNullOrEmpty(member.Image.Url))
+                                {
+                                    <MudImage Src="@member.Image.Url" Alt="@member.FullName" />
+                                }
+                                else if (!string.IsNullOrEmpty(member.Initials))
+                                {
+                                    @member.Initials
+                                }
+                                else
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.Person" />
+                                }
+                            </MudAvatar>
+                            <span>@member.FullName</span>
+                        </div>
+                    </MudSelectItem>
+                }
+            </MudSelect>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Secondary" Variant="Variant.Text" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    
+    [Parameter] public TodoItem TodoItem { get; set; } = new();
+    [Parameter] public List<FamilyMember> FamilyMembers { get; set; } = new();
+
+    private void Cancel() => MudDialog.Cancel();
+    private void Submit() => MudDialog.Close(DialogResult.Ok(true));
+}

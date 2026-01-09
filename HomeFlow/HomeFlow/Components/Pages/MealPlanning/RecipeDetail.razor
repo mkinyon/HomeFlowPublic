@@ -1,0 +1,239 @@
+﻿@page "/recipe"
+@page "/recipe/{id:guid}"
+
+@using HomeFlow.Components.Controls
+@using HomeFlow.Extensions
+@using HomeFlow.Constants
+
+<PageTitle>Recipes</PageTitle>
+
+<style>
+    .step {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .step-number {
+        font-weight: bold;
+        color: black;
+        font-size: 1.2rem;
+        line-height: 1.5;
+        min-width: 1rem;
+    }
+
+    .step-text {
+        flex: 1;
+        line-height: 1.6;
+    }
+</style>
+
+<MudContainer Fixed="true">
+    @if (Recipe == null)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+    }
+    else if (!_editMode)
+    {
+        <MudContainer>
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    <MudItem sm="12">
+                        <MudStack Row>
+                            @if ( Recipe.Image != null )
+                            {
+                                <MudImage Src="@Recipe.Image?.Url" Style="width: 250px;" ObjectFit="ObjectFit.Cover" Class="rounded-lg" />
+                            }
+                            <MudStack style="width: 100%;">
+                                <MudStack Row>
+                                    <MudText Typo="Typo.h6">@Recipe.Name</MudText>
+                                    <MudSpacer />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="(() => _editMode = true)" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Print" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="Print" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="DeleteRecipe" />
+                                </MudStack>
+                                <MudText Typo="Typo.body1">@Recipe.Description</MudText>
+                                <MudText Typo="Typo.body1"><b>Author</b><br/> @Recipe.Author</MudText>
+
+                                <MudSpacer />
+
+                                <MudStack Row>
+                                    @foreach ( var tag in Recipe.Tags )
+                                    {
+                                        <MudChip T="string" Color="Color.Primary">@tag</MudChip>
+                                    }
+                                </MudStack>
+                                
+                            </MudStack>
+                        </MudStack>
+                    </MudItem>
+                    
+
+                    <MudItem sm="12">
+                        <MudDivider />
+                    </MudItem>
+
+                    <MudItem sm="3">
+                        <MudStack AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.h6">Servings</MudText>
+                            <MudText Typo="Typo.body1">@Recipe.Servings</MudText>
+                        </MudStack>
+                    </MudItem>
+
+                    <MudItem sm="3">
+                        <MudStack AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.h6">Prep Time</MudText>
+                            <MudText Typo="Typo.body1">@Recipe.PrepTimeInMinutes minutes</MudText>
+                        </MudStack>
+                    </MudItem>
+
+                    <MudItem sm="3">
+                        <MudStack AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.h6">Cook Time</MudText>
+                            <MudText Typo="Typo.body1">@Recipe.CookTimeInMinutes minutes</MudText>
+                        </MudStack>
+                    </MudItem>
+
+                    <MudItem sm="3">
+                        <MudStack AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.h6">Total Time</MudText>
+                            <MudText Typo="Typo.body1">@Recipe.TotalTimeInMinutes minutes</MudText>
+                        </MudStack>
+                    </MudItem>
+
+                    <MudItem sm="12">
+                        <MudDivider />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" Class="mb-2">Ingredients</MudText>
+                        <MudList T="RecipeGroceryItem" Dense>
+                            @foreach (var recipeGroceryItem in Recipe.RecipeGroceryItems)
+                            {
+                                <MudListItem>@recipeGroceryItem.ToString()</MudListItem>
+                                <MudDivider />
+                            }
+                        </MudList>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" Class="mb-2">Directions</MudText>
+                        <MudList T="RecipeStep" Dense>
+                            @foreach (var (step, index) in Recipe.RecipeSteps.Select((step, i) => (step, i + 1)))
+                            {
+                                 <MudListItem>
+                                    <div class="step">
+                                        <div class="step-number">@index</div>
+                                        <div class="step-text">
+                                            @step
+                                        </div>
+                                    </div>
+                                </MudListItem>
+                                <MudDivider />
+                            }
+                        </MudList>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudContainer>
+    }
+    else if (_editMode)
+    {
+        <MudForm Model="Recipe" @ref="@form" Validation="@(validator.ValidateValue)" ValidationDelay="0">
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    <MudItem md="12" sm="12" xs="12">
+                        <MudStack Row>
+                            <MudText Typo="Typo.h4">@RecipeName</MudText>
+                            <MudSpacer />
+                            <MudIconButton Icon="@Icons.Material.Filled.AutoAwesome" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick="OpenAIRecipeImport" />
+                        </MudStack>
+                        <MudDivider />
+                    </MudItem>
+                    <MudItem md="8" sm="12" xs="12">
+                        <MudTextField OnKeyUp="TitleChange" Immediate="true" @bind-Value="Recipe.Name" For="@(() => Recipe.Name)" Label="Name" Variant="Variant.Outlined" />
+                        <MudTextField @bind-Value="Recipe.Description" For="@(() => Recipe.Description)" Label="Description" Lines="6" Variant="Variant.Outlined" />
+                        <MudTextField @bind-Value="Recipe.Author" For="@(() => Recipe.Author)" Label="Author" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem md="4" sm="12" xs="12">
+                        <ImageUploader @bind-Image="Recipe.Image" Width="500" Height="500" Prompt="Drag or Click to Upload Image" Folder="@ImageFolders.Recipes" />
+                    </MudItem>
+                    <MudItem sm="4" xs="12">
+                        <MudSelect @bind-Value="Recipe.RecipeType" Label="Type">
+                            @foreach (RecipeType item in Enum.GetValues(typeof(RecipeType)))
+                            {
+                                <MudSelectItem Value="@item">@item.ToString().SplitPascalCase()</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem sm="4" xs="12">
+                        <MudNumericField @bind-Value="Recipe.Servings" For="@(() => Recipe.Servings)" Label="Servings" />
+                    </MudItem>
+                    <MudItem sm="4" xs="12">
+                    </MudItem>
+                    <MudItem sm="4" xs="12">
+                        <MudNumericField @bind-Value="Recipe.PrepTimeInMinutes" For="@(() => Recipe.PrepTimeInMinutes)" Label="Prep Time (Minutes)" />
+                    </MudItem>
+                    <MudItem sm="4" xs="12">
+                        <MudNumericField @bind-Value="Recipe.CookTimeInMinutes" For="@(() => Recipe.CookTimeInMinutes)" Label="Cook Time (Minutes)" />
+                    </MudItem>
+                    <MudItem sm="4" xs="12">
+                        <MudNumericField @bind-Value="Recipe.TotalTimeInMinutes" For="@(() => Recipe.TotalTimeInMinutes)" Label="Total Time (Minutes)" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+            <MudPaper Class="pa-4 mt-4">
+                <MudGrid>
+                    <MudItem md="12" sm="12" xs="12">
+                        <MudText Typo="Typo.h5">Directions</MudText>
+                        <MudDivider />
+                    </MudItem>
+                    <MudItem sm="12" xs="12">
+                        <RecipeStepEditor Recipe="Recipe" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+            <MudPaper Class="pa-4 mt-4">
+                <MudGrid>
+                    <MudItem md="12" sm="12" xs="12">
+                        <MudStack Row>
+                            <MudText Typo="Typo.h5">Grocery Items</MudText>
+                        </MudStack>
+                        <MudDivider Class="mt-3" />
+                    </MudItem>
+                    <MudItem md="12" xs="12">
+                        <RecipeGroceryItemEditor Recipe="Recipe" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+            <MudPaper Class="pa-4 mt-4">
+                <MudGrid>
+                    <MudItem md="12" sm="12" xs="12">
+                        <MudText Typo="Typo.h5">Tags</MudText>
+                        <MudDivider />
+                    </MudItem>
+                    <MudItem md="12" xs="12">
+                        <TagEditor Tags="Recipe.Tags" TagsChanged="OnTagsChanged" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+            <MudPaper Class="pa-4 mt-4">
+                <MudGrid>
+                    <MudItem md="12" sm="12" xs="12">
+                        <MudButton OnClick="SaveRecipe" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+                        <MudButton OnClick="Cancel" Variant="Variant.Text" Color="Color.Secondary">Cancel</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudForm>
+
+    }
+</MudContainer>
+
+<MudMessageBox @ref="_mudMessageBox" Title="Warning" CancelText="Cancel">
+    <MessageContent>
+        Deleting can not be undone!
+    </MessageContent>
+    <YesButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteForever">Delete!</MudButton>
+    </YesButton>
+</MudMessageBox>

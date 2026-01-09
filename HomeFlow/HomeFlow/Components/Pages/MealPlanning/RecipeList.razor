@@ -1,0 +1,52 @@
+﻿@page "/recipes"
+@using HomeFlow.Extensions
+
+<PageTitle>Recipes</PageTitle>
+
+<MudTable ServerData="RecipeData" @ref="table"
+    Hover
+    Striped
+    Height="calc(100vh - 14rem);"
+    Breakpoint="Breakpoint.Sm"
+    LoadingProgressColor="Color.Info"
+    FixedHeader="true"
+    T="Recipe"
+    OnRowClick="ViewRecipe">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Recipes</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="_searchString" DebounceInterval="500" OnDebounceIntervalElapsed="SearchAsync" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" class="mx-2" Href="recipe">Add Recipe</MudButton>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="name" T="Recipe">Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="type" T="Recipe">Type</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="description" T="Recipe">Description</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="author" T="Recipe">Author</MudTableSortLabel></MudTh>
+        <MudTh>Tags</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Image">
+            @if (context.Image != null)
+            {
+                <MudImage Width="100" Height="100" Class="rounded-lg" Src="@context.Image?.Url" />
+            }
+        </MudTd>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Type">@context.RecipeType.ToString().SplitPascalCase()</MudTd>
+        <MudTd DataLabel="Description">@context.Description</MudTd>
+        <MudTd DataLabel="Author">@context.Author</MudTd>
+        <MudTd DataLabel="Tags">
+            <MudStack Row="true">
+                @foreach ( var tag in context.Tags )
+                {
+                    <MudChip T="string">@tag</MudChip>
+                }
+            </MudStack>
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>

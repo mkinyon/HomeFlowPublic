@@ -1,0 +1,31 @@
+﻿@page "/setup"
+@using HomeFlow.Components.Layouts
+@using HomeFlow.Components.Controls
+@layout SetupLayout
+
+<MudPaper Style="width: 800px">
+    <MudStepper>
+        <MudStep Title="Welcome">
+            <MudText Typo="Typo.h6">Welcome to HomeFlow!</MudText>
+            <MudText Typo="Typo.body1">We're here to make managing your home and family effortless. 
+            Start by personalizing the app to suit your unique needs. 
+            Simply follow the steps to set up your family members and 
+            complete the final step to get everything ready.
+            </MudText>
+        </MudStep>
+        <MudStep Title="Setup Family Members">
+            <FamilyMemberEditor FamilyMembers="@_familyMembers" />
+        </MudStep>
+        <MudStep Title="Final Step" CompletedChanged="OnFinishAsync">
+            <MudPaper Elevation="0" Class="py-8 d-flex justify-center flex-grow-1 gap-4">
+                <MudButton Variant="Variant.Filled"
+                           Class="object-center"
+                           Style="width: 200px; height: 60px;"
+                           Color="Color.Primary"
+                           OnClick="OnFinishAsync">
+                    Take Me Home
+                </MudButton>
+            </MudPaper>
+        </MudStep>
+    </MudStepper>
+</MudPaper>

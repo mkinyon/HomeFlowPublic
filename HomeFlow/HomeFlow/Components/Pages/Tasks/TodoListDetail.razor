@@ -1,0 +1,139 @@
+@page "/todolist"
+@page "/todolist/{id:guid}"
+@using HomeFlow.Features.Tasks.TodoLists
+@using HomeFlow.Features.Core.FamilyMembers
+
+<PageTitle>Todo List</PageTitle>
+
+<MudContainer Fixed="true">
+    @if (TodoList == null)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+    }
+    else
+    {
+        <MudPaper Outlined="true" Class="ma-4 pa-6">
+            <MudStack Row AlignItems="AlignItems.Center" Class="mb-4">
+                <MudTextField T="string" Typo="Typo.h4" @bind-Value="@TodoList.Name" OnBlur="UpdateTodoListName" Class="flex-grow-1" />
+                @if (TodoList.Id != Guid.Empty)
+                {
+                    <MudButton Variant="Variant.Outlined" 
+                              Color="Color.Secondary" 
+                              StartIcon="@Icons.Material.Filled.ContentCopy"
+                              OnClick="CopyTodoList"
+                              Class="ml-2">
+                        Copy List
+                    </MudButton>
+                }
+            </MudStack>
+            
+            <MudList T="TodoItem" Dense="true">
+                @foreach (var item in TodoList.Items)
+                {
+                    <MudListItem T="TodoItem">
+                        <div class="d-flex align-center justify-space-between w-100">
+                            <div class="d-flex align-center flex-grow-1">
+                                <MudToggleIconButton 
+                                    Toggled="@item.IsCompleted"
+                                    ToggledChanged="@((bool value) => ToggleItemStatus(item, value))"
+                                    Icon="@Icons.Material.Outlined.Circle"
+                                    Color="@Color.Default"
+                                    ToggledIcon="@Icons.Material.Filled.CheckCircle"
+                                    ToggledColor="@Color.Success"
+                                    Size="Size.Large"
+                                    Class="mr-3" />
+                                
+                                <div class="flex-grow-1">
+                                    <MudTextField Value="@item.Title" 
+                                                 ValueChanged="@((string value) => OnItemTitleChanged(item, value))"
+                                                 Variant="Variant.Text" 
+                                                 Class="todo-item-title"
+                                                 Style="@(item.IsCompleted ? "text-decoration: line-through; opacity: 0.6;" : "")" />
+                                    
+                                    <div class="d-flex align-center mt-1">
+                                        @if (item.DueDate.HasValue)
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Color="@(item.DueDate.Value.Date < DateTime.Today ? Color.Error : Color.Info)" Class="mr-2">
+                                                <MudIcon Icon="@Icons.Material.Filled.Event" Size="Size.Small" Class="mr-1" />
+                                                @item.DueDate.Value.ToString("MMM dd, yyyy")
+                                            </MudChip>
+                                        }
+                                        
+                                        @if (item.AssignedFamilyMember != null)
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Secondary" Class="mr-2">
+                                                <MudAvatar Size="Size.Small" Class="mr-1">
+                                                    @if (item.AssignedFamilyMember.Image != null && !string.IsNullOrEmpty(item.AssignedFamilyMember.Image.Url))
+                                                    {
+                                                        <MudImage Src="@item.AssignedFamilyMember.Image.Url" Alt="@item.AssignedFamilyMember.FullName" />
+                                                    }
+                                                    else if (!string.IsNullOrEmpty(item.AssignedFamilyMember.Initials))
+                                                    {
+                                                        @item.AssignedFamilyMember.Initials
+                                                    }
+                                                    else
+                                                    {
+                                                        <MudIcon Icon="@Icons.Material.Filled.Person" />
+                                                    }
+                                                </MudAvatar>
+                                                @item.AssignedFamilyMember.FullName
+                                            </MudChip>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex align-center">
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Color="Color.Default">
+                                    <MudMenuItem OnClick="@(() => EditItem(item))">
+                                        <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-2" />
+                                        Edit
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => RemoveItemAsync(item.Id))">
+                                        <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-2" />
+                                        Delete
+                                    </MudMenuItem>
+                                </MudMenu>
+                            </div>
+                        </div>
+                    </MudListItem>
+                }
+            </MudList>
+
+            <MudDivider Class="mb-4 mt-0" />
+            
+            <MudStack Row Class="mt-6">
+                <MudTextField @bind-Value="@_newItemTitle" 
+                             T="string" 
+                             Label="New Todo Item" 
+                             Class="flex-grow-1"
+                             Variant="Variant.Outlined"
+                             Adornment="Adornment.Start"
+                             AdornmentIcon="@Icons.Material.Filled.Add"
+                             Immediate />
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary" 
+                          @onclick="AddNewItem" 
+                          Disabled="@string.IsNullOrWhiteSpace(_newItemTitle)"
+                          StartIcon="@Icons.Material.Filled.Add">
+                    Add Item
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+    }
+</MudContainer>
+
+<style>
+    .todo-item-title .mud-input-root {
+        min-height: auto;
+    }
+    
+    .todo-item-title .mud-input-root .mud-input-slot {
+        padding: 0;
+    }
+    
+    .todo-item-title .mud-input-root .mud-input-slot .mud-input {
+        padding: 0;
+        font-size: 1rem;
+    }
+</style>

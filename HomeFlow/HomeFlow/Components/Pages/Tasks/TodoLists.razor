@@ -1,0 +1,65 @@
+@page "/todolists"
+@using HomeFlow.Features.Tasks.TodoLists
+
+<PageTitle>Todo Lists</PageTitle>
+
+<MudTable ServerData="TodoListVMData" @ref="table"
+    Hover
+    Striped
+    Height="calc(100vh - 14rem);"
+    Breakpoint="Breakpoint.Sm"
+    LoadingProgressColor="Color.Info"
+    FixedHeader="true"
+    T="TodoListVM"
+    OnRowClick="@ViewTodoList">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Todo Lists</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="_searchString" DebounceInterval="500" OnDebounceIntervalElapsed="SearchAsync" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" class="mx-2" @onclick="Add">Add Todo List</MudButton>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortLabel="name" T="TodoListVM">Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="totalitems" T="TodoListVM">Total Items</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="completeditems" T="TodoListVM">Completed</MudTableSortLabel></MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Total Items">@context.TotalItems</MudTd>
+        <MudTd DataLabel="Completed">
+            @if (context.TotalItems > 0)
+            {
+                var completionPercentage = (double)context.CompletedItems / context.TotalItems * 100;
+                <MudProgressCircular Value="@completionPercentage" 
+                                    Color="@GetProgressColor(completionPercentage)" 
+                                    Size="Size.Medium" 
+                                    Thickness="4"
+                                    Style="position: relative;">
+                    <MudText Typo="Typo.caption" Style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                        @($"{completionPercentage:F0}%")
+                    </MudText>
+                </MudProgressCircular>
+            }
+            else
+            {
+                <MudText>0%</MudText>
+            }
+        </MudTd>
+        <MudTd Style="text-align:right">
+            <MudIconButton Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => OnDeleteClickAsync(context.Id))" />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+<MudMessageBox @ref="_mudMessageBox" Title="Warning" CancelText="Cancel">
+    <MessageContent>
+        Deleting can not be undone!
+    </MessageContent>
+    <YesButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteForever">Delete!</MudButton>
+    </YesButton>
+</MudMessageBox>

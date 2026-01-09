@@ -1,0 +1,36 @@
+﻿
+@using HomeFlow.Features.MealPlanning.Recipes
+@using MudBlazor
+
+<MudPaper Class="pa-2 my-2" Elevation="0">
+    <MudStack StretchItems="StretchItems.Middle" Row>
+        <MudIcon Icon="@Icons.Material.Filled.Reorder" />
+        <MudTextField @bind-Value="Step.Text" Label="@_label" />
+        <MudIconButton Icon="@Icons.Material.Outlined.Close" Color="Color.Secondary" OnClick="@(() => RemoveItem(Step))" />
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public EventCallback OnNotifyParent { get; set; }
+
+    [Parameter]
+    public required Recipe Recipe { get; set; }
+
+    [Parameter]
+    public required RecipeStep Step { get; set; } 
+
+    private string _label
+    {
+        get
+        {
+            return $"Step {Step.Order + 1}";
+        }
+    }
+
+    private void RemoveItem( RecipeStep step )
+    {
+        Recipe?.RecipeSteps.Remove( step );
+        OnNotifyParent.InvokeAsync( null );
+    }
+}

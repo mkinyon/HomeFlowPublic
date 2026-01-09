@@ -1,0 +1,102 @@
+@page "/contact"
+@page "/contact/{id:guid}"
+
+@using HomeFlow.Components.Controls
+@using HomeFlow.Constants
+
+<PageTitle>Contacts</PageTitle>
+
+<MudContainer Fixed="true">
+    @if (Contact == null)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+    }
+    else if (!_editMode)
+    {
+        <MudContainer>
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    <MudItem sm="12">
+                        <MudStack Row>
+                            @if ( Contact.Image != null )
+                            {
+                                <MudImage Src="@Contact.Image?.Url" Style="width: 250px;" ObjectFit="ObjectFit.Cover" Class="rounded-lg" />
+                            }
+                            else
+                            {
+                                <MudAvatar Size="Size.Large" Color="Color.Primary" Style="width: 250px; height: 250px; font-size: 4rem;">@Contact.Initials</MudAvatar>
+                            }
+                            <MudStack style="width: 100%;">
+                                <MudStack Row>
+                                    <MudText Typo="Typo.h6">@Contact.FullName</MudText>
+                                    <MudSpacer />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="(() => _editMode = true)" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Text" Color="Color.Error" Size="Size.Small" OnClick="DeleteContact" />
+                                </MudStack>
+                                
+                                @if (!string.IsNullOrEmpty(Contact.Email))
+                                {
+                                    <MudText Typo="Typo.body1"><b>Email</b><br/> @Contact.Email</MudText>
+                                }
+                                
+                                @if (!string.IsNullOrEmpty(Contact.PhoneNumber))
+                                {
+                                    <MudText Typo="Typo.body1"><b>Phone</b><br/> @Contact.PhoneNumber</MudText>
+                                }
+                                
+                                @if (Contact.BirthDate.HasValue)
+                                {
+                                    <MudText Typo="Typo.body1"><b>Birth Date</b><br/> @Contact.BirthDate.Value.ToString("MMMM dd, yyyy")</MudText>
+                                }
+                                
+                                @if (Contact.AnniversaryDate.HasValue)
+                                {
+                                    <MudText Typo="Typo.body1"><b>Anniversary</b><br/> @Contact.AnniversaryDate.Value.ToString("MMMM dd, yyyy")</MudText>
+                                }
+                            </MudStack>
+                        </MudStack>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudContainer>
+    }
+    else if (_editMode)
+    {
+        <MudForm Model="Contact" @ref="@form" Validation="@(validator.ValidateValue)" ValidationDelay="0">
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    <MudItem md="12" sm="12" xs="12">
+                        <MudStack Row>
+                            <MudText Typo="Typo.h4">@ContactName</MudText>
+                            <MudSpacer />
+                        </MudStack>
+                        <MudDivider />
+                    </MudItem>
+                    <MudItem md="8" sm="12" xs="12">
+                        <MudTextField OnKeyUp="NameChange" Immediate="true" @bind-Value="Contact.FirstName" For="@(() => Contact.FirstName)" Label="First Name" Variant="Variant.Outlined" />
+                        <MudTextField OnKeyUp="NameChange" Immediate="true" @bind-Value="Contact.LastName" For="@(() => Contact.LastName)" Label="Last Name" Variant="Variant.Outlined" />
+                        <MudTextField @bind-Value="Contact.Email" For="@(() => Contact.Email)" Label="Email" Variant="Variant.Outlined" />
+                        <MudTextField @bind-Value="Contact.PhoneNumber" For="@(() => Contact.PhoneNumber)" Label="Phone Number" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem md="4" sm="12" xs="12">
+                        <ImageUploader @bind-Image="Contact.Image" Width="500" Height="500" Prompt="Drag or Click to Upload Image" Folder="@ImageFolders.Contacts" />
+                    </MudItem>
+                    <MudItem sm="6" xs="12">
+                        <MudDatePicker @bind-Date="BirthDate" Editable Label="Birth Date" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem sm="6" xs="12">
+                        <MudDatePicker @bind-Date="AnniversaryDate" Editable Label="Anniversary Date" Variant="Variant.Outlined" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+            <MudPaper Class="pa-4 mt-4">
+                <MudGrid>
+                    <MudItem md="12" sm="12" xs="12">
+                        <MudButton OnClick="SaveContact" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+                        <MudButton OnClick="Cancel" Variant="Variant.Text" Color="Color.Secondary">Cancel</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudForm>
+    }
+</MudContainer>

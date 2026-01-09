@@ -1,0 +1,114 @@
+﻿<Widget Title="Upcoming Milestones">
+    <SummaryContent>
+        <MudText Typo="Typo.h6">Today's' Milestones</MudText>
+        <MudDivider />
+
+        @if (CurrentDayMilestones.Any())
+        {
+            <MudStack>
+                @foreach (var milestone in CurrentDayMilestones.Take(3))
+                {
+                    <MudStack Row>
+                        <MudAvatar Size="Size.Small">
+                            @if (string.IsNullOrEmpty(milestone.ImageUrl))
+                            {
+                                <MudText Class="text-sm">@milestone.Initials</MudText>
+                            }
+                            else
+                            {
+                                <MudImage Src="@milestone.ImageUrl" />
+                            }
+                        </MudAvatar>
+                        <MudStack>
+                            <MudText Typo="Typo.body2">
+                                @if (milestone.IsBirthday)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.Cake" Color="Color.Success" Size="Size.Small" />
+                                    <span>@milestone.FullName - @milestone.Age years old!</span>
+                                }
+                                else if (milestone.IsAnniversary)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.Favorite" Color="Color.Error" Size="Size.Small" />
+                                    <span>@milestone.FullName - @milestone.AnniversaryYears years!</span>
+                                }
+                            </MudText>
+                        </MudStack>
+                    </MudStack>
+                }
+                @if (CurrentDayMilestones.Count > 3)
+                {
+                    <MudText Typo="Typo.caption">+@(CurrentDayMilestones.Count - 3) more today</MudText>
+                }
+            </MudStack>
+        }
+        else
+        {
+            <MudStack Class="pa-4" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.body2" Class="text-center">No milestones today. Click to view upcoming milestones.</MudText>
+            </MudStack>
+        }
+    </SummaryContent>
+
+    <ExpandedContent>
+        <MudList T="string">
+            @foreach (var milestone in Milestones)
+            {
+                <MudListItem Href="@($"/contact/{milestone.PrimaryContactId}")">
+                    <AvatarContent>
+                       <MudAvatarGroup Max="2" Spacing="8" MaxColor="Color.Primary">
+                        <MudAvatar>
+                            @if (string.IsNullOrEmpty(milestone.ImageUrl))
+                            {
+                                <MudText Class="text-xl">@milestone.Initials</MudText>
+                            }
+                            else
+                            {
+                                <MudImage Src="@milestone.ImageUrl" />
+                            }
+                        </MudAvatar>
+                        @if (milestone.Spouse != null )
+                        {
+                            <MudAvatar>
+                                @if ( string.IsNullOrEmpty( milestone.Spouse.ImageUrl ) )
+                                {
+                                    <MudText Class="text-xl">@milestone.Spouse.Initials</MudText>
+                                }
+                                else
+                                {
+                                    <MudImage Src="@milestone.Spouse.ImageUrl" />
+                                }
+                            </MudAvatar>
+                        }
+                        </MudAvatarGroup>
+                    </AvatarContent>
+                    <ChildContent>
+                        
+                        @if ( milestone.IsBirthday )
+                        {
+                            <MudStack Row>
+                                <MudText Typo="Typo.h6">@milestone.FullName</MudText>
+                                <MudIcon Icon="@Icons.Material.Filled.Cake" Color="Color.Success" />
+                            </MudStack>
+                            <MudText>
+                                @milestone.ShortDate -
+                                @(milestone.IsToday ? $"{milestone.Age} years old!" : $"{milestone.Age + 1} years old!")
+                            </MudText>
+                        }
+
+                        @if ( milestone.IsAnniversary )
+                        {
+                            <MudStack Row>
+                                <MudText Typo="Typo.h6">@milestone.FullName</MudText>
+                                <MudIcon Icon="@Icons.Material.Filled.Favorite" Color="Color.Error" />
+                            </MudStack>
+                            <MudText>
+                                @milestone.ShortDate -
+                                @(milestone.IsToday ? $"{milestone.AnniversaryYears}" : $"Married {milestone.AnniversaryYears + 1} years!")
+                            </MudText>
+                        }
+                    </ChildContent>
+                </MudListItem>
+            }       
+        </MudList>
+    </ExpandedContent>
+</Widget>

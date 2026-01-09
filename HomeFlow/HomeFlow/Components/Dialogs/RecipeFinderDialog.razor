@@ -1,0 +1,109 @@
+﻿@namespace MudBlazor
+@using HomeFlow.Extensions
+@using HomeFlow.Features.MealPlanning.Recipes
+
+<MudDialog DefaultFocus="DefaultFocus.FirstChild" TitleClass="h1 mud-theme-primary" Style="height: 820px">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Recipes</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField 
+        T="string" 
+        Label="Search" 
+        Class="mb-6" 
+        @bind-Value="_searchTerm" 
+        Adornment="Adornment.End" 
+        AdornmentIcon="@Icons.Material.Filled.Search"
+        Immediate="true"
+        DebounceInterval="500"
+        OnDebounceIntervalElapsed="SearchAsync" />
+
+        @if ( _recipes == null || !_recipes.Any() )
+        {
+            <MudItem sm="12">
+                <MudText Typo="Typo.h5" Class="mb-4">No recipes found</MudText>
+            </MudItem>
+        }
+
+        @if ( _recipes != null && _recipes.Any() )
+        {
+            <div style="height: 600px; overflow: auto">
+                @if ( _searchTerm == string.Empty )
+                {
+                    <MudText Typo="Typo.h5">Your Recommendations</MudText>
+                }
+
+                <MudGrid>
+                    @foreach ( var recipe in _recipes )
+                    {
+                        <MudItem sm="6">
+                            <MudCard Elevation="2" Class="my-1">
+                                <MudCardHeader>
+                                    <CardHeaderContent>
+                                        <MudText Typo="Typo.body1">@recipe.Name</MudText>
+                                        <MudText Typo="Typo.body2">@recipe.Description.TruncateWords(6)</MudText>
+                                    </CardHeaderContent>
+                                    <CardHeaderActions>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Primary" OnClick="@(() => Save(recipe))" />
+                                    </CardHeaderActions>
+                                </MudCardHeader>
+                                @if ( recipe.Image != null )
+                                {
+                                    <MudCardMedia Image="@recipe.Image.Url" Height="200" />
+                                }
+                                <MudCardContent Style="min-height: 72px;">
+                                    @foreach ( var tag in @recipe.Tags.Take(2) )
+                                    {
+                                        <MudChip T="string" Color="Color.Primary">@tag</MudChip>
+                                    }
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </div>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Secondary" Variant="Variant.Text" OnClick="Cancel">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Inject]
+    IRecipeService RecipeService { get; set; } = default!;
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private string _searchTerm = string.Empty;
+    private ICollection<Recipe>? _recipes;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _recipes = await RecipeService.GetRecipeRecommendationsQuery( 30 );
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void Save( Recipe recipe )
+    {
+        MudDialog.Close( DialogResult.Ok( recipe ) );
+    }
+
+    public async Task SearchAsync()
+    {
+        _recipes = await Search();
+        StateHasChanged();
+    }
+
+    private async Task<ICollection<Recipe>> Search()
+    {
+        _recipes = new List<Recipe>();
+
+        return await RecipeService.SearchAsync( _searchTerm, 100 );
+    }
+}

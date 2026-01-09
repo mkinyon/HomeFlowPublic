@@ -1,0 +1,53 @@
+﻿
+@using HomeFlow.Features.Core.FamilyMembers
+@using HomeFlow.Constants
+@using MudBlazor
+
+<MudGrid Class="my-1">
+    <MudItem sm="11" xs="10">
+
+        <MudForm Model="FamilyMember" Validation="@(validator.ValidateValue )" ValidationDelay="0">
+            <MudStack Row="true">
+                <ImageUploader @bind-Image="FamilyMember.Image" Width="100" Height="100" AvatarMode Folder="@ImageFolders.FamilyMembers" />
+                <MudTextField @bind-Value="FamilyMember.FirstName" For="@(() => FamilyMember.FirstName )" Label="First Name" Immediate="true" Required Validation="@(validator.ValidateValue )" />
+                <MudTextField @bind-Value="FamilyMember.LastName" For="@(() => FamilyMember.LastName )" Label="Last Name" Immediate="true" Required Validation="@(validator.ValidateValue )" />
+                <MudSelect @bind-Value="FamilyMember.FamilyMemberType" Label="Role">
+                    @foreach (FamilyMemberType item in Enum.GetValues(typeof(FamilyMemberType)))
+                    {
+                        <MudSelectItem Value="@item">@item</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudSelect @bind-Value="FamilyMember.Gender" Label="Gender">
+                    @foreach (Gender item in Enum.GetValues(typeof(Gender)))
+                    {
+                        <MudSelectItem Value="@item">@item</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudStack>
+        </MudForm>
+
+    </MudItem>
+    <MudItem sm="1" xs="2">
+        <MudIconButton Icon="@Icons.Material.Outlined.Close" Color="Color.Secondary" OnClick="@(() => RemoveItem(FamilyMember))" />
+    </MudItem>
+</MudGrid>
+
+
+@code {
+    [Parameter]
+    public EventCallback OnNotifyParent { get; set; }
+
+    [Parameter]
+    public required List<FamilyMember> FamilyMembers { get; set; }
+
+    [Parameter]
+    public required FamilyMember FamilyMember { get; set; }
+
+    private FamilyMemberValidator validator = new FamilyMemberValidator();
+
+    private void RemoveItem(FamilyMember familyMember)
+    {
+        FamilyMembers.Remove(familyMember);
+        OnNotifyParent.InvokeAsync(null);
+    }
+}

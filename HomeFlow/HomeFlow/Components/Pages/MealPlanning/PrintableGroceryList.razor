@@ -1,0 +1,109 @@
+﻿@page "/grocerylist/{id:guid}/print"
+@page "/grocerylist/{id:guid}/print/{grocerystoreid:guid}"
+@using HomeFlow.Components.Layouts
+@layout PrintLayout
+
+<PageTitle>@_groceryList.Name</PageTitle>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0.75in;
+        font-size: 0.85em; /* Smaller base font */
+    }
+
+    h1 {
+        text-align: center;
+        font-size: 1.2em;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 0.2em;
+    }
+
+    .store-info {
+        text-align: center;
+        font-size: 0.7em;
+        margin-bottom: 1em;
+    }
+
+    .container {
+        display: flex;
+        justify-content: center;
+        gap: 3em; /* Wider gap between columns */
+    }
+
+    .column {
+        flex: 1;
+        padding: 0 1em; /* Adds margin-like space inside columns */
+    }
+
+    .aisle-title {
+        margin-top: 16px;
+        margin-bottom: 4px;
+        font-weight: bold;
+        font-size: 0.9em;
+    }
+
+    .item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 6px;
+    }
+
+    .item input[type="checkbox"] {
+        margin-right: 6px;
+        width: 12px;
+        height: 12px;
+    }
+
+    .line {
+        flex: 1;
+        border-bottom: 1px solid black;
+        padding-bottom: 2px;
+        font-size: 0.85em;
+    }
+
+    @@media print {
+        body {
+            margin: 0.10in;
+            margin-left: 1.5in;
+            margin-right: 1.5in;
+        }
+    }
+
+    footer {
+        text-align: center;
+        font-size: 0.7em;
+        margin-top: 2em;
+    }
+</style>
+
+
+<h1>@_groceryList.Name</h1>
+<p class="store-info">@_groceryList.StoreName - @_groceryList.StoreLocation</p>
+
+<div class="container">
+    <div class="column">
+    @foreach ( var aisle in _columnOneAisles)
+    {
+        <p class="aisle-title">@aisle.Name</p>
+        @foreach ( var groceryItem in aisle.GroceryItems)
+        {
+            <div class="item"><input type="checkbox"><div class="line">@groceryItem.Name</div></div>
+        }
+    }
+    </div>
+    <div class="column">
+        @foreach ( var aisle in _columnTwoAisles )
+        {
+            <p class="aisle-title">@aisle.Name</p>
+            @foreach ( var groceryItem in aisle.GroceryItems )
+            {
+                <div class="item"><input type="checkbox"><div class="line">@groceryItem.Name</div></div>
+            }
+        }
+    </div>
+</div>
+
+<footer>HomeFlow @DateTime.Now.ToString("yyyy")</footer>

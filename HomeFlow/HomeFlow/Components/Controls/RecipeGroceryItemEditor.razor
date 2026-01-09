@@ -1,0 +1,55 @@
+﻿
+@using HomeFlow.Extensions
+@using HomeFlow.Features.MealPlanning.Recipes
+@using MudBlazor
+
+@if (Recipe != null)
+{
+    <MudDropContainer @ref="_dropContainer" T="RecipeGroceryItem" Items="Recipe.RecipeGroceryItems" ItemDropped="ReorderItems" ItemsSelector="@((item,dropzone) => string.Empty == dropzone)">
+        <ChildContent>
+            <MudDropZone T="RecipeGroceryItem" Identifier="" AllowReorder="true" />
+        </ChildContent>
+        <ItemRenderer>
+            <RecipeGroceryItemRow Recipe="Recipe" RecipeGroceryItem="@context" OnNotifyParent="HandleNotification" />
+        </ItemRenderer>
+    </MudDropContainer>
+}
+<MudButton OnClick="AddNew" Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary">Add Grocery Item</MudButton>
+
+@code {
+    [Parameter]
+    public Recipe? Recipe { get; set; }
+
+    private MudDropContainer<RecipeGroceryItem> _dropContainer = new();
+
+    private void AddNew()
+    {
+        Recipe?.RecipeGroceryItems.Add(new RecipeGroceryItem());
+        _dropContainer.Refresh();
+    }
+
+    private void ReorderItems( MudItemDropInfo<RecipeGroceryItem> dropInfo )
+    {
+        if ( Recipe == null || dropInfo.Item == null )
+        {
+            return;
+        }
+
+        int oldIndex = Recipe.RecipeGroceryItems.IndexOf( dropInfo.Item );
+        if ( oldIndex < 0 )
+            return;
+
+        Recipe.RecipeGroceryItems.Reorder( oldIndex, dropInfo.IndexInZone );
+    }
+
+    protected override void OnParametersSet()
+    {
+        _dropContainer.Refresh();
+    }
+
+    private void HandleNotification()
+    {
+        _dropContainer.Refresh();
+        StateHasChanged();
+    }
+}

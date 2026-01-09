@@ -1,0 +1,74 @@
+﻿@namespace MudBlazor
+@using HomeFlow.Features.MealPlanning.GroceryItems
+@using HomeFlow.Features.MealPlanning.GroceryStores
+
+<MudDialog TitleClass="h1 mud-theme-primary">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Add to Grocery Store</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm>
+            <MudSelect T="GroceryStoreAisle" @bind-Value="_selectedGroceryStoreAisle" Label="Grocery Aisle" Clearable>
+                @foreach ( var aisle in _groceryStoreAisles )
+                {
+                    <MudSelectItem Value="aisle">@aisle.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Secondary" Variant="Variant.Text" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Inject]
+    IGroceryStoreService GroceryStoreService { get; set; } = default!;
+
+    [Inject]
+    IGroceryItemService GroceryItemService { get; set; } = default!;
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public GroceryItem GroceryItem { get; set; } = new();
+
+    [Parameter]
+    public GroceryStore GroceryStore { get; set; } = new();
+
+    private List<GroceryStoreAisle> _groceryStoreAisles = new();
+    private GroceryStoreAisle? _selectedGroceryStoreAisle;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var groceryStore = await GroceryStoreService.GetByIdAsync( GroceryStore.Id );
+        if ( groceryStore != null )
+        {
+            _groceryStoreAisles = groceryStore.GroceryStoreAisles.OrderBy( a => a.Name ).ToList();
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void Save()
+    {
+        if ( _selectedGroceryStoreAisle == null )
+        {
+            MudDialog.Close( DialogResult.Ok( false ) );
+            return;
+        }
+
+        GroceryStore.GroceryStoreAisles
+            .First( a => a.Id == _selectedGroceryStoreAisle.Id )
+            .GroceryItems.Add( GroceryItem );
+
+        GroceryStoreService.UpdateAsync( GroceryStore );
+
+        MudDialog.Close( DialogResult.Ok( true ) );
+    }
+}

@@ -1,0 +1,18 @@
+﻿@page "/"
+@using HomeFlow.Components.Widgets
+
+<PageTitle>Home</PageTitle>
+
+<MudContainer Class="mt-16 px-8" MaxWidth="MaxWidth.False">
+    <MudGrid>
+        <MudItem xs="12" sm="6" md="4">
+            <MyFamilyWidget />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MealCalendarWidget />
+        </MudItem>
+        <MudItem xs="12" sm="12" md="4">
+            <UpcomingMilestonesWidget />
+        </MudItem>
+    </MudGrid>
+</MudContainer>

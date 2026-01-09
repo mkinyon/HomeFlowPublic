@@ -1,0 +1,49 @@
+﻿@using MudBlazor
+
+
+
+<MudStack Spacing="4">
+    <MudStack Row="true">
+        @foreach (var tag in Tags)
+        {
+            <MudChip T="string" Text="@tag" Variant="Variant.Filled" OnClose="RemoveTag" Color="Color.Primary"/>
+        }
+    </MudStack>
+
+    <MudStack Row="true">
+        <MudTextField @bind-Text="newTagName" T="string" Label="Tag Name" />
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="AddTag">Add Tag</MudButton>
+    </MudStack>
+</MudStack>
+
+
+@code {
+    [Parameter]
+    public List<string> Tags { get; set; } = new List<string>();
+
+    [Parameter]
+    public EventCallback<List<string>> TagsChanged { get; set; }
+
+    private string newTagName = string.Empty;
+
+    private void AddTag()
+    {
+        if (newTagName != string.Empty && !Tags.Any( t => t == newTagName ) )
+        {
+            Tags.Add( newTagName );
+            Tags = Tags.OrderBy( t => t ).ToList();
+
+            newTagName = string.Empty;
+
+            TagsChanged.InvokeAsync( Tags );
+        }
+    }
+
+    private void RemoveTag( MudChip<string> chip )
+    {
+        if (chip.Text != null)
+        {
+            Tags.Remove(chip.Text);
+        }
+    }
+}

@@ -1,0 +1,41 @@
+﻿@using HomeFlow.Components.Dialogs
+@using MudBlazor
+
+<MudPaper Class="widget-summary pa-4 align-center cursor-pointer rounded-lg" Style="min-height: 150px;" Elevation="6" @onclick="OpenDialog">
+     @SummaryContent
+</MudPaper>
+
+@code {
+    [Parameter] 
+    public string Title { get; set; } = default!;
+
+    [Parameter] 
+    public RenderFragment? SummaryContent { get; set; }
+
+    [Parameter] 
+    public RenderFragment? ExpandedContent { get; set; }
+
+    [CascadingParameter] 
+    IMudDialogInstance? DialogInstance { get; set; }
+
+    [Inject]
+    IDialogService DialogService { get; set; } = default!;
+
+    private void OpenDialog()
+    {
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+
+        var parameters = new DialogParameters
+        {
+            ["Title"] = Title,
+            ["Content"] = ExpandedContent
+        };
+
+        DialogService.ShowAsync<WidgetExpandedViewDialog>( Title, parameters, options );
+    }
+}

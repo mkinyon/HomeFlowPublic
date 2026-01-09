@@ -1,0 +1,25 @@
+﻿@inherits LayoutComponentBase
+
+<ErrorBoundary>
+    <ChildContent>
+        @Body
+    </ChildContent>
+    <ErrorContent Context="ex">
+        <h1>Exception</h1>
+        <p>@ex.Message</p> @*prints exeption on page*@
+        <p>@ex.InnerException?.Message</p>
+    </ErrorContent>
+</ErrorBoundary>
+
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+<style>
+
+</style>
+
+

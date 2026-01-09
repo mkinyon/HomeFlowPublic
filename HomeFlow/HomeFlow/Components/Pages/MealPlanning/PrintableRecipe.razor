@@ -1,0 +1,238 @@
+﻿@page "/recipe/{id:guid}/print"
+@using HomeFlow.Components.Layouts
+@layout PrintLayout
+
+<PageTitle>@_recipe.Name</PageTitle>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+
+
+<style>
+    body {
+        font-family: "Work Sans", sans-serif;
+        font-optical-sizing: auto;
+        margin: 0.75in;
+        font-size: 0.85em;
+        /* Smaller base font */
+    }
+
+    .card {
+        max-width: 900px;
+        margin: auto;
+    }
+
+    .header {
+        display: flex;
+        gap: 16px;
+    }
+
+        .header img {
+            width: 250px;
+            height: 250px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+    .header-content {
+        flex: 1;
+    }
+
+    h1 {
+        margin: 0 0 8px;
+    }
+
+    .description {
+        margin-bottom: 16px; /* ✅ Adds spacing before author */
+    }
+
+    .author {
+        margin-top: 8px;
+        font-weight: bold;
+    }
+
+    .tags {
+        margin-top: 8px;
+    }
+
+    .tag {
+        display: inline-block;
+        background: #4caf50;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.8em;
+        margin-right: 6px;
+    }
+
+    .meta {
+        display: flex;
+        justify-content: space-around;
+        margin: 16px 0;
+        border-top: 1px solid #ccc;
+        border-bottom: 1px solid #ccc;
+        padding: 12px 0;
+        text-align: center;
+    }
+
+        .meta div {
+            flex: 1;
+        }
+
+        .meta h3 {
+            margin: 0;
+            font-size: 1em;
+            color: #555;
+        }
+
+        .meta p {
+            margin: 4px 0 0;
+            font-weight: bold;
+        }
+
+    .content {
+        display: flex;
+        gap: 32px;
+        margin-top: 20px;
+    }
+
+    .ingredients, .directions {
+        flex: 1;
+    }
+
+        .ingredients h2, .directions h2 {
+            margin-bottom: 8px;
+        }
+
+    .ingredient-item {
+        padding: 6px 0;
+        border-bottom: 1px solid #ddd; /* ✅ Line divider */
+    }
+
+        .ingredient-item:last-child {
+            border-bottom: none;
+        }
+
+    .directions ol {
+        padding-left: 20px;
+    }
+
+    .directions li {
+        margin-bottom: 12px;
+    }
+
+    .footer {
+        text-align: center;
+        margin-top: 30px;
+        font-size: 0.9em;
+        color: #888;
+    }
+
+    @@media print {
+        body
+
+    {
+        margin: 0;
+    }
+
+    .card {
+        border: none;
+    }
+
+    }
+
+    .step {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .step-number {
+        font-weight: bold;
+        color: black;
+        font-size: 1.2rem;
+        line-height: 1.5;
+        min-width: 1rem;
+    }
+
+    .step-text {
+        flex: 1;
+        line-height: 1.6;
+    }
+
+    footer {
+        text-align: center;
+        font-size: 0.7em;
+        margin-top: 2em;
+    }
+</style>
+
+@if( _recipe != null )
+{
+    <div class="card">
+        <div class="header">
+            <img src="@_recipe.Image?.Url" alt="@_recipe.Name">
+            <div class="header-content">
+                <h1>@_recipe.Name</h1>
+                <p class="description">@_recipe.Description</p>
+                <p class="author"><strong>Author:</strong> @_recipe.Author</p>
+
+                <div class="tags">
+                    @foreach ( var tag in _recipe?.Tags ?? Enumerable.Empty<string>() )
+                    {
+                        <span class="tag">@tag</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="meta">
+            <div>
+                <h3>Servings</h3>
+                <p>@_recipe.Servings</p>
+            </div>
+            <div>
+                <h3>Prep Time</h3>
+                <p>@_recipe.PrepTimeInMinutes minutes</p>
+            </div>
+            <div>
+                <h3>Cook Time</h3>
+                <p>@_recipe.CookTimeInMinutes minutes</p>
+            </div>
+            <div>
+                <h3>Total Time</h3>
+                <p>@_recipe.TotalTimeInMinutes minutes</p>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="ingredients">
+                <h2>Ingredients</h2>
+                <ul>
+                    @foreach ( var groceryItem in _recipe?.RecipeGroceryItems )
+                    {
+                        <div class="ingredient-item">@groceryItem.ToString()</div>
+                    }
+
+                </ul>
+            </div>
+
+            <div class="directions">
+                <h2>Directions</h2>
+                <ol>
+                    @foreach ( var (step, index) in _recipe.RecipeSteps.Select( ( step, i ) => (step, i + 1) ) )
+                    {
+                        <div class="ingredient-item step">
+                            <div class="step-number">@index</div>
+                            <div class="step-text">
+                                @step
+                            </div>
+                        </div>
+                    }
+                </ol>
+            </div>
+        </div>
+    </div>
+}
+<footer>HomeFlow @DateTime.Now.ToString( "yyyy" )</footer>

@@ -1,0 +1,505 @@
+@page "/dashboard"
+@using HomeFlow.Components.Layouts
+@using HomeFlow.Components.Widgets
+@using HomeFlow.Infrastructure.FileStorage
+@using HomeFlow.Features.Core.ImageFiles
+@using HomeFlow.Features.Core.SystemSettings
+@using HomeFlow.Constants
+@layout DashboardLayout
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@inject IFileStorage FileStorage
+@inject IImageFileService ImageFileService
+@inject ISystemSettingService SystemSettingService
+@implements IAsyncDisposable
+
+<MudDrawer @bind-Open="_open" Anchor="Anchor.Start" Elevation="1" Variant="@DrawerVariant.Temporary" Width="330px" OverlayAutoClose>
+    <MudDrawerContainer>
+        <MudStack Class="pa-2" >
+            <MudSlider 
+                Value="StrokeWidth"
+                Min="10"
+                Max="100"
+                Step="5"
+                T="double"
+                Size="Size.Large"
+                Color="Color.Primary"
+                Class="px-2 pb-6"
+                ValueChanged="OnStrokeWidthChanged">
+                Stroke Width
+            </MudSlider>
+
+            <MudDivider />
+
+            <MudText Class="px-2">Color</MudText>
+            <MudColorPicker 
+                Variant="Variant.Outlined"
+                ColorPickerView="ColorPickerView.Grid"
+                PickerVariant="PickerVariant.Static"
+                ShowInputs="false"
+                ShowAlpha="false"
+                TextChanged="OnPenColorChanged" />
+
+            <MudDivider />
+
+            <MudButton 
+                Variant="Variant.Filled" 
+                Color="Color.Primary"
+                OnClick="SaveCanvas" 
+                StartIcon="@Icons.Material.Filled.Save">
+                Save Whiteboard
+            </MudButton>
+
+            <MudButton 
+                Variant="Variant.Outlined"
+                Color="Color.Secondary"
+                OnClick="NewWhiteboard">
+                New Whiteboard
+            </MudButton>
+        </MudStack>
+    </MudDrawerContainer>
+</MudDrawer>
+
+<MudFab 
+    Color="(_open ? Color.Error : Color.Secondary)"
+    StartIcon="@(_open ? Icons.Material.Filled.Close : Icons.Material.Filled.Edit)"
+    OnClick="ToggleDrawer" 
+    Class="ma-2" 
+    Style="position: absolute; bottom: 0; left: 0; z-index: 9999;">
+    Open
+</MudFab>
+
+<!-- Floating Widgets Container -->
+<div class="floating-widgets">
+    <div class="widget-container">
+        <MyFamilyWidget />
+    </div>
+    <div class="widget-container">
+        <MealCalendarWidget />
+    </div>
+    <div class="widget-container">
+        <UpcomingMilestonesWidget />
+    </div>
+</div>
+
+<!-- Whiteboard Container -->
+<div class="drawing-container">
+    <div class="canvas-container" @ref="CanvasContainer">
+        <canvas @ref="Canvas" id="drawing-canvas"></canvas>
+    </div>
+</div>
+
+<style>
+    .floating-widgets {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        z-index: 1000;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 20px;
+        gap: 20px;
+    }
+
+    .widget-container {
+        flex: 1;
+        max-width: 350px;
+        min-width: 250px;
+        transition: all 0.3s ease;
+        pointer-events: auto;
+    }
+
+    .widget-container:hover {
+        transform: scale(1.02);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .drawing-container {
+        height: 100vh;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .canvas-container {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+        background: #fff;
+    }
+
+    #drawing-canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        image-rendering: pixelated;
+        background: #fff;
+        touch-action: none;
+        cursor: crosshair;
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        .floating-widgets {
+            padding: 10px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .widget-container {
+            max-width: 300px;
+            min-width: 200px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .floating-widgets {
+            padding: 5px;
+            gap: 5px;
+        }
+        
+        .widget-container {
+            max-width: 250px;
+            min-width: 150px;
+        }
+    }
+</style>
+
+@code {
+    private bool _open;
+
+    private void ToggleDrawer()
+    {
+        _open = !_open;
+        StateHasChanged();
+    }
+
+    private ElementReference Canvas;
+    private ElementReference CanvasContainer;
+
+    private double StrokeWidth = 6.5;
+    private string PenColor = "#000000";
+    private int CanvasWidth = 0;
+    private int CanvasHeight = 0;
+    private Guid? _currentWhiteboardImageId = null;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadCurrentWhiteboardImage();
+            await InitializeSignaturePad();
+            this.firstRender = false;
+        }
+    }
+
+    private bool firstRender = true;
+
+    private async Task InitializeSignaturePad()
+    {
+        try
+        {
+            // Load the JavaScript module
+            await JSRuntime.InvokeVoidAsync("eval", @"
+                if (typeof SignaturePad === 'undefined') {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/signature_pad@4.2.0/dist/signature_pad.umd.min.js';
+                    document.head.appendChild(script);
+                }
+            ");
+
+            // Load our custom JavaScript
+            await JSRuntime.InvokeVoidAsync("eval", @"
+                if (!window.whiteboardLoaded) {
+                    const script = document.createElement('script');
+                    script.src = '/js/whiteboard.js';
+                    document.head.appendChild(script);
+                    window.whiteboardLoaded = true;
+                }
+            ");
+
+            // Wait for scripts to load
+            await Task.Delay(1000);
+
+            // Initialize the whiteboard
+            await JSRuntime.InvokeVoidAsync("initializeWhiteboard", Canvas, new
+            {
+                penColor = PenColor,
+                backgroundColor = "#ffffff",
+                minWidth = StrokeWidth * 0.2,
+                maxWidth = StrokeWidth * 0.8,
+                throttle = 16,
+                inactivityCallback = DotNetObjectReference.Create(this),
+                inactivityTimeout = 10000 // 10 seconds
+            });
+
+            // Set up resize observer
+            await JSRuntime.InvokeVoidAsync("setupWhiteboardResize", Canvas, CanvasContainer, DotNetObjectReference.Create(this));
+
+            // Initial resize
+            await ResizeCanvas();
+
+            AddSnackbarMessage("Whiteboard initialized successfully", MudBlazor.Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            AddSnackbarMessage($"Failed to initialize whiteboard: {ex.Message}", MudBlazor.Severity.Error);
+        }
+    }
+
+    private async Task ResizeCanvas()
+    {
+        try
+        {
+            var result = await JSRuntime.InvokeAsync<CanvasSizeInfo>("resizeWhiteboardCanvas", Canvas, CanvasContainer);
+            CanvasWidth = result.Width;
+            CanvasHeight = result.Height;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            AddSnackbarMessage($"Failed to resize canvas: {ex.Message}", MudBlazor.Severity.Error);
+        }
+    }
+
+    private async Task LoadCurrentWhiteboardImage()
+    {
+        try
+        {
+            var currentImageId = await SystemSettingService.GetSystemSetting(SystemSettings.CURRENT_WHITEBOARD_IMAGE);
+            if (!string.IsNullOrEmpty(currentImageId) && Guid.TryParse(currentImageId, out var imageId))
+            {
+                _currentWhiteboardImageId = imageId;
+                AddSnackbarMessage("Loaded existing whiteboard", MudBlazor.Severity.Info);
+            }
+        }
+        catch (Exception ex)
+        {
+            AddSnackbarMessage($"Failed to load current whiteboard: {ex.Message}", MudBlazor.Severity.Warning);
+        }
+    }
+
+    private async Task ClearCanvas()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("clearWhiteboardCanvas", Canvas);
+            AddSnackbarMessage("Canvas cleared", MudBlazor.Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            AddSnackbarMessage($"Failed to clear canvas: {ex.Message}", MudBlazor.Severity.Error);
+        }
+    }
+
+    private async Task NewWhiteboard()
+    {
+        try
+        {
+            // Clear the canvas
+            await ClearCanvas();
+            
+            // Reset the current whiteboard image ID
+            _currentWhiteboardImageId = null;
+            
+            // Clear the system setting
+            await SystemSettingService.UpdateSystemSettingAsync(new SystemSetting
+            {
+                Key = SystemSettings.CURRENT_WHITEBOARD_IMAGE,
+                Value = string.Empty
+            });
+            
+            AddSnackbarMessage("New whiteboard created", MudBlazor.Severity.Success);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            AddSnackbarMessage($"Failed to create new whiteboard: {ex.Message}", MudBlazor.Severity.Error);
+        }
+    }
+
+    private async Task SaveCanvas()
+    {
+        try
+        {
+            // Get the image data from JavaScript
+            var imageDataUrl = await JSRuntime.InvokeAsync<string>("saveWhiteboardCanvas", Canvas);
+
+            if (string.IsNullOrEmpty(imageDataUrl))
+            {
+                AddSnackbarMessage("Failed to generate image data", MudBlazor.Severity.Error);
+                return;
+            }
+
+            // Convert data URL to bytes
+            var base64Data = imageDataUrl.Replace("data:image/png;base64,", "");
+            var imageBytes = Convert.FromBase64String(base64Data);
+
+            // Create image file request with proper folder information
+            var imageRequest = new ImageFileRequest
+            {
+                Width = CanvasWidth,
+                Height = CanvasHeight,
+                Data = imageBytes,
+                Folder = ImageFolders.Whiteboard
+            };
+
+            ImageFile savedImage;
+
+            if (_currentWhiteboardImageId.HasValue)
+            {
+                // Update existing image
+                savedImage = await ImageFileService.UpdateAsync(_currentWhiteboardImageId.Value, imageRequest);
+                AddSnackbarMessage($"Whiteboard updated successfully! Image ID: {savedImage.Id}", MudBlazor.Severity.Success);
+            }
+            else
+            {
+                // Create new image
+                savedImage = await ImageFileService.UploadAsync(imageRequest);
+                
+                // Store the new image ID as the current whiteboard
+                _currentWhiteboardImageId = savedImage.Id;
+                await SystemSettingService.UpdateSystemSettingAsync(new SystemSetting
+                {
+                    Key = SystemSettings.CURRENT_WHITEBOARD_IMAGE,
+                    Value = savedImage.Id.ToString()
+                });
+                
+                AddSnackbarMessage($"Whiteboard saved successfully! Image ID: {savedImage.Id}", MudBlazor.Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            AddSnackbarMessage($"Failed to save canvas: {ex.Message}", MudBlazor.Severity.Error);
+        }
+    }
+
+    private async Task AutoSaveCanvas()
+    {
+        try
+        {
+            // Get the image data from JavaScript
+            var imageDataUrl = await JSRuntime.InvokeAsync<string>("saveWhiteboardCanvas", Canvas);
+
+            if (string.IsNullOrEmpty(imageDataUrl))
+            {
+                return; // Silently fail for auto-save
+            }
+
+            // Convert data URL to bytes
+            var base64Data = imageDataUrl.Replace("data:image/png;base64,", "");
+            var imageBytes = Convert.FromBase64String(base64Data);
+
+            // Create image file request with proper folder information
+            var imageRequest = new ImageFileRequest
+            {
+                Width = CanvasWidth,
+                Height = CanvasHeight,
+                Data = imageBytes,
+                Folder = ImageFolders.Whiteboard
+            };
+
+            if (_currentWhiteboardImageId.HasValue)
+            {
+                // Update existing image
+                await ImageFileService.UpdateAsync(_currentWhiteboardImageId.Value, imageRequest);
+                AddSnackbarMessage("Auto-saved", MudBlazor.Severity.Info);
+            }
+            else
+            {
+                // Create new image for auto-save
+                var savedImage = await ImageFileService.UploadAsync(imageRequest);
+                
+                // Store the new image ID as the current whiteboard
+                _currentWhiteboardImageId = savedImage.Id;
+                await SystemSettingService.UpdateSystemSettingAsync(new SystemSetting
+                {
+                    Key = SystemSettings.CURRENT_WHITEBOARD_IMAGE,
+                    Value = savedImage.Id.ToString()
+                });
+                
+                AddSnackbarMessage("Auto-saved (new)", MudBlazor.Severity.Info);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log error but don't show to user for auto-save
+            Console.WriteLine($"Auto-save failed: {ex.Message}");
+        }
+    }
+
+    private async Task OnStrokeWidthChanged(double value)
+    {
+        StrokeWidth = value;
+        await UpdateWhiteboardSettings();
+    }
+
+    private async Task OnPenColorChanged(string value)
+    {
+        PenColor = value;
+        await UpdateWhiteboardSettings();
+    }
+
+    private async Task UpdateWhiteboardSettings()
+    {
+        if (!firstRender)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("updateWhiteboardSettings", Canvas, new
+                {
+                    penColor = PenColor,
+                    minWidth = StrokeWidth * 0.2,
+                    maxWidth = StrokeWidth * 0.8
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Parameter update error: {ex.Message}");
+            }
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnCanvasResize()
+    {
+        await ResizeCanvas();
+    }
+
+    [JSInvokable]
+    public async Task OnInactivityDetected()
+    {
+        await AutoSaveCanvas();
+    }
+
+    public class CanvasSizeInfo
+    {
+        public int Width { get; set; }
+        public int Height { get; set; }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("cleanupWhiteboard");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during cleanup: {ex.Message}");
+        }
+    }
+
+    private void AddSnackbarMessage( string message, MudBlazor.Severity severity )
+    {
+        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.BottomEnd;
+        Snackbar.Add( message, severity );
+    }
+}

@@ -1,0 +1,36 @@
+﻿
+<MudNavMenu>
+    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+    <MudNavGroup Title="Meal Planning" Expanded="true">
+        <MudNavLink Href="mealplanner" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.CalendarMonth">Meal Planner</MudNavLink>
+        <MudNavLink Href="grocerylists" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Checklist">Grocery Lists</MudNavLink>
+        <MudNavLink Href="recipes" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.DinnerDining">Recipes</MudNavLink>
+        <MudNavLink Href="groceryitems" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">Grocery Items</MudNavLink>
+        <MudNavLink Href="grocerystores" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.ShoppingCart">Grocery Stores</MudNavLink>
+    </MudNavGroup>
+    <MudNavGroup Title="People" Expanded="true">
+        <MudNavLink Href="contacts" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.People">Contacts</MudNavLink>
+    </MudNavGroup>
+    <MudNavGroup Title="Tasks" Expanded="true">
+        <MudNavLink Href="todolists" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Checklist">Todo Lists</MudNavLink>
+    </MudNavGroup>
+    <MudNavGroup Title="Administration" Expanded="true">
+        <MudNavLink Href="datamanagement" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Dataset">Data Management</MudNavLink>
+        <MudNavLink Href="setup" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Settings">Run Setup</MudNavLink>   
+    </MudNavGroup>
+
+    <MudSpacer />
+
+    <MudStack Class="ma-2">
+        <MudButton Href="dashboard"
+                   Variant="Variant.Filled"
+                   FullWidth
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Dashboard">
+            Launch Dashboard
+        </MudButton>
+    </MudStack>
+   
+</MudNavMenu>
+
+

@@ -1,0 +1,100 @@
+@namespace MudBlazor
+@using HomeFlow.Features.MealPlanning.Recipes
+@using HomeFlow.Infrastructure.AI
+
+<MudDialog DefaultFocus="DefaultFocus.FirstChild" TitleClass="h1 mud-theme-primary" Style="height: 600px">
+    <TitleContent>
+        <MudStack Row>
+            <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">AI Recipe Import</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body1" Class="mb-4">
+            Paste your recipe text below and let AI extract the recipe details for you.
+        </MudText>
+        
+        <MudTextField 
+            T="string" 
+            Label="Recipe Text" 
+            Class="mb-4" 
+            @bind-value="_recipeText" 
+            Lines="12"
+            Variant="Variant.Outlined"
+            Placeholder="Paste your recipe text here..." />
+
+        @if (_isProcessing)
+        {
+            <MudStack Row Class="mb-4">
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Small" />
+                <MudText Typo="Typo.body2">Processing recipe with AI...</MudText>
+            </MudStack>
+        }
+
+        @if (_errorMessage != null)
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@_errorMessage</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Secondary" Variant="Variant.Text" OnClick="Cancel" Disabled="@_isProcessing">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="ProcessRecipe" Disabled="@_isProcessing">
+            <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Class="mr-2" />
+            Import Recipe
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Inject]
+    IRecipeService RecipeService { get; set; } = default!;
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private string _recipeText = string.Empty;
+    private bool _isProcessing = false;
+    private string? _errorMessage = null;
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task ProcessRecipe()
+    {
+        if (string.IsNullOrWhiteSpace(_recipeText))
+        {
+            _errorMessage = "Please enter some recipe text to import.";
+            StateHasChanged();
+            return;
+        }
+
+        _isProcessing = true;
+        _errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var recipe = await RecipeService.ParseRecipeFromText( _recipeText );
+
+            if (recipe != null)
+            {
+                MudDialog.Close(DialogResult.Ok(recipe));
+            }
+            else
+            {
+                _errorMessage = "Unable to parse recipe from the provided text. Please check the format and try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error processing recipe: {ex.Message}";
+        }
+        finally
+        {
+            _isProcessing = false;
+            StateHasChanged();
+        }
+    }
+} 

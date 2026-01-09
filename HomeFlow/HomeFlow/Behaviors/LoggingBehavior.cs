@@ -1,0 +1,36 @@
+using System.Diagnostics;
+
+namespace HomeFlow.Behaviors;
+
+public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse> where TRequest : notnull
+{
+    private readonly ILogger<LoggingBehavior<TRequest, TResponse>> _logger;
+
+    public LoggingBehavior( ILogger<LoggingBehavior<TRequest, TResponse>> logger )
+    {
+        _logger = logger;
+    }
+
+    public async Task<TResponse> Handle( TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken )
+    {
+        var requestName = typeof( TRequest ).Name;
+        var start = Stopwatch.GetTimestamp();
+
+        try
+        {
+            var response = await next();
+            var elapsed = Stopwatch.GetElapsedTime( start ).TotalMilliseconds;
+
+            _logger.LogInformation( "Handled {RequestName} in {ElapsedMs} ms", requestName, elapsed );
+
+            return response;
+        }
+        catch ( Exception ex )
+        {
+            var elapsed = Stopwatch.GetElapsedTime( start ).TotalMilliseconds;
+            _logger.LogError( ex, "Exception in {RequestName} after {ElapsedMs} ms", requestName, elapsed );
+
+            throw;
+        }
+    }
+}

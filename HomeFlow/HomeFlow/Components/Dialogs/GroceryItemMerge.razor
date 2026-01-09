@@ -1,0 +1,82 @@
+﻿@namespace MudBlazor
+@using HomeFlow.Extensions
+@using HomeFlow.Features.MealPlanning.GroceryItems
+
+<MudDialog TitleClass="h1 mud-theme-primary">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Merge Grocery Items</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.h6">Are you sure you want to merge these grocery items?</MudText>
+        <MudStack Row Class="pa-4">
+        @foreach ( var item in GroceryItemVMs )
+        {
+            <MudPaper Width="300px" Elevation="6">
+                <MudList T="string">
+                    <MudListSubheader>
+                        @item.Name (@item.GroceryItemType)
+                    </MudListSubheader>
+                </MudList>
+            </MudPaper>
+        }
+        </MudStack>
+        <MudDivider Class="mt-4 mb-4" />
+        <MudForm Model="_newGroceryItem">
+            <MudText Typo="Typo.h6">New Grocery Item</MudText>
+            <MudTextField T="string" Label="Name" @bind-Value="_newGroceryItem.Name" For="@(() => _newGroceryItem.Name)" Variant="Variant.Outlined" />
+            <MudSelect @bind-Value="_newGroceryItem.GroceryItemType" For="@(() => _newGroceryItem.GroceryItemType)" Label="Type" Variant="Variant.Outlined">
+                @foreach ( GroceryItemType item in Enum.GetValues( typeof( GroceryItemType ) ) )
+                {
+                    <MudSelectItem Value="@item">@item.ToString().SplitPascalCase()</MudSelectItem>
+                }
+            </MudSelect>
+           </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Secondary" Variant="Variant.Text" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Merge">Merge</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Inject]
+    IGroceryItemService GroceryItemService { get; set; } = default!;
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public HashSet<GroceryItemVM> GroceryItemVMs { get; set; } = new HashSet<GroceryItemVM>();
+
+    private List<GroceryItem> _groceryItems = new();
+    private GroceryItem _newGroceryItem { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        foreach ( var vm in GroceryItemVMs )
+        {
+            // TODO: Should create GetByIds service method
+            var item = await GroceryItemService.GetByIdAsync( vm.Id );
+            _groceryItems.Add( item! );
+        }
+
+        _newGroceryItem = _groceryItems.First();
+    }
+
+    private void Close()
+    {
+        MudDialog.Close( DialogResult.Ok( true ) );
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task Merge()
+    {
+        await GroceryItemService.MergeGroceryItemsAsync( _newGroceryItem, _groceryItems );
+        
+        MudDialog.Close( DialogResult.Ok( true ) );
+    }
+}

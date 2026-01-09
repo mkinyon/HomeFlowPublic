@@ -1,0 +1,174 @@
+﻿
+
+@using HomeFlow.Features.Core.ImageFiles
+@using HomeFlow.Constants
+@using Microsoft.AspNetCore.Components;
+@using Microsoft.AspNetCore.Components.Forms;
+@using MudBlazor
+
+<style>
+    .image-container {
+    position: relative;
+    display: inline-block;
+    }
+
+    .delete-button {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    z-index: 10;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    }
+</style>
+
+@if (Image == null )
+{
+    @* For some reason Hidden is required for drag and drop to work. *@
+    <MudFileUpload T="IReadOnlyList<IBrowserFile>"
+    @ref="_fileUploader"
+    OnFilesChanged="UploadImage"
+    Accept="@_acceptString"
+    Hidden="false"
+    InputClass="absolute mud-width-full mud-height-full overflow-hidden z-10"
+    InputStyle="opacity:0"
+    tabindex="-1"
+    @ondrop="@ClearDragClass"
+    @ondragenter="@SetDragClass"
+    @ondragleave="@ClearDragClass"
+    @ondragend="@ClearDragClass">
+        <ActivatorContent>
+            @if ( AvatarMode )
+            {
+                <MudAvatar style="width: 60px; height: 60px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Person" />
+                </MudAvatar>
+            }
+            else
+            {
+                <MudPaper Outlined Class="@_dragClass">
+                    @if ( Prompt != string.Empty )
+                    {
+                        <MudText Typo="Typo.h6">
+                            @Prompt
+                        </MudText>
+                    }
+                </MudPaper>
+            }
+        </ActivatorContent>
+    </MudFileUpload>
+}
+else 
+{
+    @if ( AvatarMode )
+    {
+        <div class="image-container">
+            <MudAvatar style="width: 60px; height: 60px;">
+                <MudImage Src="@Image?.Url" />
+            </MudAvatar>
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Filled" Color="Color.Error" Size="Size.Small" Style="border-radius: 20px;" Class="delete-button" OnClick="RemoveImage" />
+        </div>
+    }
+    else
+    {
+        <div class="image-container mud-width-full mud-height-full">
+            <MudImage Src="@Image.Url" ObjectFit="ObjectFit.Cover" Class="rounded-lg mud-width-full mud-height-full" />
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Filled" Color="Color.Error" Size="Size.Small" Style="border-radius: 20px;" Class="delete-button" OnClick="RemoveImage" />
+        </div>
+    }
+}
+
+@code
+{
+    [Inject]
+    ISnackbar Snackbar { get; set; } = default!;
+
+    [Inject]
+    IImageFileService ImageFileService { get; set; } = default!;
+
+    [Parameter]
+    public bool AvatarMode { get; set; } = false;
+
+    [Parameter]
+    public string Prompt { get; set; } = string.Empty;
+
+    [Parameter]
+    public ImageFile? Image { get; set; }
+
+    [Parameter]
+    public EventCallback<ImageFile?> ImageChanged { get; set; }
+
+    [Parameter]
+    public int Width { get; set; } = 150;
+
+    [Parameter]
+    public int Height { get; set; } = 150;
+
+    [Parameter]
+    public string Folder { get; set; } = string.Empty;
+
+    private MudFileUpload<IReadOnlyList<IBrowserFile>>? _fileUploader;
+    private IBrowserFile? _uploadedImageFile;
+
+    private const string _defaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mt-2 mud-width-full mud-height-full";
+    private string _dragClass = _defaultDragClass;
+    private void SetDragClass() => _dragClass = $"{_defaultDragClass} mud-border-primary";
+    private void ClearDragClass() => _dragClass = _defaultDragClass;
+
+    private List<string> _acceptFileTypes = new List<string> { ".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff", ".pbm", ".qoi", ".tga", ".gif" };
+    private string _acceptString => string.Join( ",", _acceptFileTypes );
+
+    protected override void OnInitialized()
+    {
+    }
+
+    private async Task UploadImage( InputFileChangeEventArgs e )
+    {
+        ClearDragClass();
+        var files = e.GetMultipleFiles();
+
+        if (files == null || files.Count == 0)
+        {
+            return;
+        }
+
+        _uploadedImageFile = files.First();
+        
+        if ( !_acceptFileTypes.Contains( _uploadedImageFile.Name.Substring( _uploadedImageFile.Name.LastIndexOf( '.' ) ) ) )
+        {
+            Snackbar.Add( "Invalid file type. Please upload a valid image file.", MudBlazor.Severity.Error );
+            return;
+        };
+
+        if (_uploadedImageFile != null)
+        {
+            using ( var stream = _uploadedImageFile.OpenReadStream( 20000000 ) )
+            using ( var ms = new MemoryStream() )
+            {
+                await stream.CopyToAsync( ms );
+                var buffer = ms.ToArray();
+
+                var imageResponse = await ImageFileService.UploadAsync( new ImageFileRequest
+                    {
+                        Data = buffer,
+                        Width = this.Width,
+                        Height = this.Height,
+                        Folder = this.Folder
+                    } );
+
+                Image = imageResponse;
+
+                StateHasChanged();
+            }
+        }
+
+        await ImageChanged.InvokeAsync( Image );
+        StateHasChanged();
+    }
+
+    private async Task RemoveImage()
+    {
+        Image = null;
+        await ImageChanged.InvokeAsync( Image );
+    }
+}

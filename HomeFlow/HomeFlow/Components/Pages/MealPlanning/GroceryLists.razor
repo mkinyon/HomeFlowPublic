@@ -1,0 +1,44 @@
+﻿@page "/grocerylists"
+
+<PageTitle>Grocery Lists</PageTitle>
+
+<MudTable ServerData="GroceryListData" @ref="table"
+    Hover
+    Striped
+    Height="calc(100vh - 14rem);"
+    Breakpoint="Breakpoint.Sm" 
+    LoadingProgressColor="Color.Info"
+    FixedHeader="true" 
+    T="GroceryList" 
+    OnRowClick="ViewGroceryList">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Grocery Lists</MudText>
+        <MudSpacer />
+        <MudCheckBox T="bool" Value="_includeCompleted" ValueChanged="@ToggleCompleted" Label="Include Completed" class="mx-2" Color="Color.Primary"></MudCheckBox>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" @onclick="NewGroceryList">Add Grocery List</MudButton>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortLabel="name" T="GroceryList">Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="items" T="GroceryList">Items</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="completed" T="GroceryList">Completed</MudTableSortLabel></MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Items">@context.Items.Count()</MudTd>
+        <MudTd DataLabel="IsCompleted">@context.IsPrinted</MudTd>
+        <MudTd Style="text-align:right"><MudIconButton Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => DeleteGroceryListAsync(context.Id))" /></MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+<MudMessageBox @ref="_mudMessageBox" Title="Warning" CancelText="Cancel">
+    <MessageContent>
+        Deleting can not be undone!
+    </MessageContent>
+    <YesButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteForever">Delete!</MudButton>
+    </YesButton>
+</MudMessageBox>

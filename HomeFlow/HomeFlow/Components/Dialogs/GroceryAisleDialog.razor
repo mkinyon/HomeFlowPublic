@@ -1,0 +1,113 @@
+﻿@namespace MudBlazor
+@using HomeFlow.Features.MealPlanning.GroceryItems
+@using HomeFlow.Features.MealPlanning.GroceryStores
+
+<MudDialog TitleClass="h1 mud-theme-primary">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Edit Aisle</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm Model="Aisle">
+            <MudTextField T="string" Label="Name" @bind-Value="Aisle.Name" For="@(() => Aisle.Name)" />
+
+            <MudTable Class="mt-8 mb-6" Items="@Aisle.GroceryItems" Elevation="0"
+                Hover="true"
+                Breakpoint="Breakpoint.Sm"
+                Dense="true"
+                LoadingProgressColor="Color.Info">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">Shopping Items</MudText>
+                    <MudSpacer />
+                    <MudAutocomplete T="GroceryItem" 
+                        @ref="_autocomplete"
+                        @bind-Value="SelectedGroceryItem"
+                        Label="Grocery Item"
+                        SearchFunc="@SearchGroceryItems"
+                        ShowProgressIndicator
+                        Clearable>
+                    </MudAutocomplete>
+                </ToolBarContent>
+                <HeaderContent>
+                    <MudTh>Name</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Name">@context.Name</MudTd>
+                    <MudTd><MudIconButton Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => RemoveGroceryItem(context.Id))" /></MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Primary" OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Inject]
+    IGroceryItemService GroceryItemService { get; set; } = default!;
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public GroceryStoreAisle Aisle { get; set; } = new();
+
+    private ICollection<GroceryItem>? _groceryItems;
+    private MudAutocomplete<GroceryItem> _autocomplete = new MudAutocomplete<GroceryItem>();
+
+    private GroceryItem? _selectedGroceryItem;
+    public  GroceryItem? SelectedGroceryItem
+    {
+        get => _selectedGroceryItem;
+        set
+        {
+            _selectedGroceryItem = value;
+            if ( _selectedGroceryItem != null )
+            {
+                AddGroceryItem( _selectedGroceryItem );
+            }
+        }
+    }
+
+    private void Close()
+    {
+        MudDialog.Close( DialogResult.Ok( true ) );
+    }
+
+    private void AddGroceryItem( GroceryItem item )
+    {
+        if (_selectedGroceryItem == null)
+        {
+            return;
+        }
+
+        Aisle.GroceryItems.Add( _selectedGroceryItem );
+        _selectedGroceryItem = null;
+
+        _autocomplete.ClearAsync();
+        StateHasChanged();
+    }
+
+    private async Task<IEnumerable<GroceryItem>> SearchGroceryItems( string value, CancellationToken token )
+    {
+        _groceryItems = await GroceryItemService.GetListAsync();
+        if ( _groceryItems == null )
+        {
+            _groceryItems = new List<GroceryItem>();
+        }
+
+        if ( string.IsNullOrEmpty( value ) )
+        {
+            return _groceryItems;
+        }
+
+        return _groceryItems.Where( i => i.Name.Contains( value, StringComparison.InvariantCultureIgnoreCase ) );
+    }
+
+    private void RemoveGroceryItem( Guid groceryItemId )
+    {
+        Aisle.GroceryItems.Remove( Aisle.GroceryItems.First( i => i.Id == groceryItemId ) );
+        StateHasChanged();
+    }
+}

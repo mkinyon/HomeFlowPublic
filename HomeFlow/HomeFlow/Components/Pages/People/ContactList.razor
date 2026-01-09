@@ -1,0 +1,49 @@
+@page "/contacts"
+@using HomeFlow.Extensions
+
+<PageTitle>Contacts</PageTitle>
+
+<MudTable ServerData="ContactData" @ref="table"
+    Hover
+    Striped
+    Height="calc(100vh - 14rem);"
+    Breakpoint="Breakpoint.Sm"
+    LoadingProgressColor="Color.Info"
+    FixedHeader="true"
+    T="Contact"
+    OnRowClick="ViewContact">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Contacts</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="_searchString" DebounceInterval="500" OnDebounceIntervalElapsed="SearchAsync" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" class="mx-2" Href="contact">Add Contact</MudButton>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="firstname" T="Contact">First Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="lastname" T="Contact">Last Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="email" T="Contact">Email</MudTableSortLabel></MudTh>
+        <MudTh>Phone Number</MudTh>
+        <MudTh><MudTableSortLabel SortLabel="birthdate" T="Contact">Birth Date</MudTableSortLabel></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Image">
+            @if (context.Image != null)
+            {
+                <MudAvatar Size="Size.Large"><MudImage Width="100" Height="100" Class="rounded-lg" Src="@context.Image?.Url" /></MudAvatar>
+            }
+            else
+            {
+                <MudAvatar Size="Size.Large" Color="Color.Primary">@context.Initials</MudAvatar>
+            }
+        </MudTd>
+        <MudTd DataLabel="First Name">@context.FirstName</MudTd>
+        <MudTd DataLabel="Last Name">@context.LastName</MudTd>
+        <MudTd DataLabel="Email">@context.Email</MudTd>
+        <MudTd DataLabel="Phone Number">@context.PhoneNumber</MudTd>
+        <MudTd DataLabel="Birth Date">@(context.BirthDate?.ToString("MM/dd/yyyy") ?? "-")</MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>

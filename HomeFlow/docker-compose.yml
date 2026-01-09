@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  homeflow:
+    build:
+      context: .
+      dockerfile: HomeFlow/Dockerfile
+      args:
+        - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+        - JWT_ISSUER=${JWT_ISSUER}
+        - JWT_AUDIENCE=${JWT_AUDIENCE}
+        - JWT_GLOBAL_USERNAME=${JWT_GLOBAL_USERNAME}
+        - JWT_GLOBAL_PASSWORD=${JWT_GLOBAL_PASSWORD}
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
+      - ASPNETCORE_URLS=${ASPNETCORE_URLS:-http://+:8080;https://+:8081}
+      - ConnectionStrings__SQLiteConnection=${CONNECTION_STRING:-Data Source=LocalStorage/Database/homeflow.db}
+      - JwtSettings__SecretKey=${JWT_SECRET_KEY}
+      - JwtSettings__Issuer=${JWT_ISSUER}
+      - JwtSettings__Audience=${JWT_AUDIENCE}
+      - JwtSettings__GlobalUsername=${JWT_GLOBAL_USERNAME}
+      - JwtSettings__GlobalPassword=${JWT_GLOBAL_PASSWORD}
+      - Logging__LogLevel__Default=${LOG_LEVEL_DEFAULT:-Information}
+      - Logging__LogLevel__Microsoft=${LOG_LEVEL_MICROSOFT:-Warning}
+      - Logging__LogLevel__Microsoft.EntityFrameworkCore=${LOG_LEVEL_ENTITYFRAMEWORK:-Error}
+    volumes:
+      - homeflow_data:/app/LocalStorage
+    restart: unless-stopped
+
+volumes:
+  homeflow_data: 

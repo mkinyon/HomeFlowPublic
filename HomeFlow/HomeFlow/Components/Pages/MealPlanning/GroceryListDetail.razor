@@ -1,0 +1,170 @@
+﻿@page "/grocerylist"
+@page "/grocerylist/{id:guid}"
+
+<PageTitle>Grocery Lists</PageTitle>
+
+
+<style>
+    /* hack to fix section header in table */    
+    .mud-table-root .mud-table-body tr:has(th[colspan]) > td:last-child {
+        background-color: #F0F1F1 !important;
+        border-bottom: none;
+        padding: 0;
+    }
+</style>
+
+<MudContainer Fixed="true">
+
+    @if ( GroceryList == null )
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+    }
+    else
+    {
+        <MudDropContainer T="RecipeDropItem" Items="_recipeDropItems" ItemsSelector="@((item,dropzone) => item.Identifier == dropzone)" ItemDropped="ItemUpdatedAsync" Class="d-flex flex-wrap flex-grow-1">
+            <ChildContent>
+                <MudHidden Breakpoint="Breakpoint.SmAndDown">
+                    <MudItem md="4">
+                        <MudPaper Elevation="3" Class="ma-4 pa-6">
+                            <MudText Typo="Typo.h6" Class="mb-4">Recipes</MudText>
+                            <MudTextField T="string"
+                                            @bind-Value="_searchTerm"
+                                            OnKeyUp="SearchAsync"
+                                            Immediate="true"
+                                            Placeholder="Recipe Name or Tag"
+                                            Variant="Variant.Text"
+                                            Adornment="Adornment.End"
+                                            AdornmentIcon="@Icons.Material.Filled.Search" />
+                            <MudDivider />
+                            <MudList T="string">
+                                <MudDropZone style="max-height: calc(100vh - 14rem);overflow-y: auto;" Class="pa-1" T="RecipeDropItem" Identifier="Recipes">
+
+                                    @if ( _recipeDropItems == null )
+                                    {
+                                        <MudProgressLinear Color="Color.Default" Indeterminate="true" Class="my-7" />
+                                    }
+                                    else if ( !_recipeDropItems.Any() )
+                                    {
+                                        <MudText Class="my-3">No Recipes found.</MudText>
+                                    }
+                                </MudDropZone>
+                            </MudList>
+                        </MudPaper>
+                    </MudItem>
+                </MudHidden>
+                <MudItem md="8" sm="12">
+                    <MudPaper Outlined="true" Class="ma-4 pa-6 flex-grow-1">
+                        <MudTextField T="string" Typo="Typo.h4" @bind-Value=@GroceryList.Name TextChanged="UpdateGroceryListName" />
+                        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+                            <MudStack Row Class="mt-6">
+                                <MudAutocomplete 
+                                    T="GroceryStore"
+                                    Value="@_groceryStore"
+                                    ValueChanged="@(v => GroceryStoreChanged(v))"
+                                    Label="Store" 
+                                    SearchFunc="@SearchStores"
+                                    SelectValueOnTab="true"
+                                    Clearable 
+                                    Margin="Margin.Dense" />
+                                <MudTooltip Text="Print the grocery list." Placement="Placement.Top">
+                                    <MudIconButton Variant="Variant.Filled"Icon="@Icons.Material.Filled.Print" Color="Color.Primary" Size="Size.Large" OnClick="Print"></MudIconButton>
+                                </MudTooltip>
+                                <MudTooltip Text="Marking the list complete will indicate the list is no longer needed and it will be archived." Placement="Placement.Top">
+                                    <MudToggleIconButton 
+                                    Variant="Variant.Filled" 
+                                    Icon="@Icons.Material.Filled.CheckBoxOutlineBlank" 
+                                    Color="Color.Default"
+                                    ToggledIcon="@Icons.Material.Filled.CheckBox"
+                                    ToggledColor="Color.Primary"
+                                    Toggled="@GroceryList.IsPrinted"
+                                    ToggledChanged="OnToggledChanged"
+                                    Size="Size.Large">Complete</MudToggleIconButton>
+                                </MudTooltip>
+                            </MudStack>
+
+                            <MudDropZone 
+                                T="RecipeDropItem" 
+                                Identifier="Grocery List"
+                                    Class="relative rounded-lg border-2 border-dashed pa-4 my-4 mud-width-full mud-height-full"
+                                    DraggingClass="mud-border-primary">
+                                <MudText Typo="Typo.h6">Drop Recipes Here</MudText>
+                            </MudDropZone>
+                        </MudHidden>
+
+                        <MudTable Items="GroceryList.Items" GroupBy="_groupDefinition" RowEditCommit="SaveAdditionalInfo" Dense Hover>
+                            <ColGroup>
+                                <col style="width: 80%;" />
+                                <col style="width: 45px;" />
+                                <col style="width: 45px;" />
+                            </ColGroup>
+                            <GroupHeaderTemplate>
+                                <MudTh Style="font-weight: 500; background-color: #F0F1F1;" colspan="3">@($"{context.Key}")</MudTh>
+                            </GroupHeaderTemplate>
+                            <RowTemplate>
+                                <MudTd>@context.Text</MudTd>
+                                <MudTd Style="padding-inline-start: 0px; padding-inline-end: 0px;">
+                                    @if ( ( _groceryItemsAtStore.Any() && context.GroceryItem?.Id != null && !_groceryItemsAtStore.Select( s => s.Id ).Contains( context.GroceryItem.Id ) ) ||
+                                        ( _groceryItemsAtStore.Any() && context.RecipeGroceryItem?.GroceryItem?.Id != null && !_groceryItemsAtStore.Select( s => s.Id ).Contains( context.RecipeGroceryItem.GroceryItem.Id ) ) )
+                                    {
+                                        <MudTooltip Text="Add to Store" Placement="Placement.Top">
+                                            <MudIconButton Icon="@Icons.Material.Filled.AddShoppingCart" Color="Color.Warning" Size="Size.Small" OnClick="@(() => AddToStore( context.Id ))" />
+                                        </MudTooltip>
+                                    }
+                                 </MudTd>
+                                <MudTd Style="padding-inline-start: 5px; padding-inline-end: 0px;"><MudIconButton Icon="@Icons.Material.Outlined.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoveItemAsync( context.Id ))" /></MudTd>
+                            </RowTemplate>
+                            <RowEditingTemplate>
+                                <MudTd><MudTextField @bind-Value="@context.AdditionalInfo" Placeholder="Add Additional Details.." /> </MudTd>
+                                <MudTd></MudTd>
+                                <MudTd></MudTd>
+                            </RowEditingTemplate>
+                        </MudTable>
+                        <MudDivider />
+                        <MudStack Class="mt-6" Row>
+                            <MudNumericField @bind-value="_qty" Min="1" Max="10" Label="Qty" Class="flex-grow-0" />
+                            <MudAutocomplete 
+                                T="GroceryItem" 
+                                @ref="_autocomplete" 
+                                Value="@_selectedGroceryItem" 
+                                ValueChanged="@(v => AddItemAsync(v))"
+                                Label="Add Grocery Item" 
+                                SearchFunc="@SearchGroceryItems"
+                                SelectValueOnTab="true"
+                                Class="flex-grow-1"
+                                Clearable>
+                                <BeforeItemsTemplate>
+                                    <div class="pa-2">
+                                        <MudButton Color="Color.Primary" Variant="Variant.Outlined" @onclick="OpenAddDialog" FullWidth>Add Grocery Item</MudButton>
+                                    </div>
+                                    <MudDivider />
+                                </BeforeItemsTemplate>
+                            </MudAutocomplete>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+            </ChildContent>
+            <ItemRenderer>
+                 <MudListItem T="RecipeDropItem">
+                    <MudStack Row Class="mt-2">
+                        <MudImage Src="@context.ImageUrl" Elevation="25" Height="72" Class="rounded-lg" ObjectFit="ObjectFit.Cover" />
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.body1">@context.Name</MudText>
+                            <MudLink Href="@($"/recipe/{@context.Id}")" Target="_blank">View Recipe</MudLink>
+                        </MudStack>
+                    </MudStack>
+                </MudListItem>
+                <MudDivider />
+            </ItemRenderer>
+        </MudDropContainer>
+    }
+</MudContainer>
+
+<MudDialog @bind-Visible="_addDialogVisible" DefaultFocus="DefaultFocus.None">
+    <DialogContent>
+        <MudTextField @bind-Value="@_newGroceryItemName" T="string" Label="Name" AutoFocus></MudTextField>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>

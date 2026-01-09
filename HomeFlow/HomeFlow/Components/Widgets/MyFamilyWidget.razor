@@ -1,0 +1,52 @@
+﻿
+
+<Widget Title="My Family">
+    <SummaryContent>
+        <MudText Typo="Typo.h6">My Family</MudText>
+        <MudDivider />
+
+        <MudAvatarGroup class="pt-2" Max="8" Spacing="3" MaxColor="Color.Primary">
+            @foreach (var familyMember in FamilyMembers)
+            {
+                <MudAvatar Color="Color.Primary">
+                    @if ( familyMember.Image != null )
+                    {
+                        <MudImage Src="@familyMember.Image.Url" />
+                    }
+                    else
+                    {
+                        @familyMember.Initials
+                    }
+                
+                </MudAvatar>
+            }
+        </MudAvatarGroup>
+    </SummaryContent>
+
+    <ExpandedContent>
+        <MudList T="string">
+            @foreach ( var familyMember in FamilyMembers )
+            {
+                <MudListItem>
+                    <AvatarContent>
+                        <MudAvatar>
+                            @if ( familyMember.Image != null )
+                            {
+                                <MudImage Src="@familyMember.Image.Url" />
+                            }
+                            else
+                            {
+                                @familyMember.Initials
+                            }
+
+                        </MudAvatar>
+                    </AvatarContent>
+                    <ChildContent>
+                        <MudText Typo="Typo.h6">@familyMember.FullName</MudText>
+                    </ChildContent>
+                </MudListItem>
+            }
+        </MudList>
+    </ExpandedContent>
+
+</Widget>

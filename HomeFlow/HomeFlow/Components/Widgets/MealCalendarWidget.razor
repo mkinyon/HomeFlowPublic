@@ -1,0 +1,42 @@
+﻿
+
+<Widget Title="Meal Calendar">
+    <SummaryContent>
+        <MudText Typo="Typo.h6">Today's Meal</MudText>
+        <MudDivider />
+        <MudStack Row Class="mt-2">
+            @if ( TodaysMeal != null )
+            {
+                <MudImage Src="@TodaysMeal.ImageUrl" Elevation="25" Height="72" Class="rounded-lg" ObjectFit="ObjectFit.Cover" />
+                <MudStack Class="flex-1">
+                    <MudText Typo="Typo.h6">@TodaysMeal.RecipeName</MudText>
+                    <MudStack Row>
+                        <MudText Typo="Typo.body1">@TodaysMeal.Date.ToString( "ddd MM/dd" )</MudText>
+                    </MudStack>
+                </MudStack>
+            }
+        </MudStack>
+    </SummaryContent>
+
+    <ExpandedContent>
+        <MudText Typo="Typo.h6">Upcoming Meals</MudText>
+        <MudDivider />
+        <MudList T="string">
+            @foreach ( var item in MealPlannerItems )
+            {
+                <MudListItem Href="@($"/recipe/{item.RecipeId}")">
+                    <MudStack Row Class="mt-2">
+                        <MudImage Src="@item.ImageUrl" Elevation="25" Height="72" Class="rounded-lg" ObjectFit="ObjectFit.Cover" />
+                        <MudStack Class="flex-1">
+                            <MudText Typo="Typo.h6">@item.RecipeName</MudText>
+                            <MudStack Row>
+                                <MudText Typo="Typo.body1">@item.Date.ToString( "ddd MM/dd" )</MudText>
+                            </MudStack>
+                        </MudStack>
+                    </MudStack>
+                </MudListItem>
+            }
+        </MudList>
+    </ExpandedContent>
+
+</Widget>
