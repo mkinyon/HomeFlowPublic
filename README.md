@@ -24,15 +24,17 @@
 
 ## Screenshots
 
+### Setup
 ![Setup](Media/Setup.png)
 
+### Meal Planner
 ![Meal Planner](Media/MealPlanner.png)
 
+### Grocery List Editor
 ![Grocery List](Media/GroceryList.png)
 
+### Recipe List
 ![Recipes](Media/Recipes.png)
-
-![Edit Aisle](Media/EditAisle.png)
 
 ---
 
