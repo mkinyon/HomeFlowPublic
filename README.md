@@ -12,26 +12,20 @@
 ## Features
 
 - **Recipe Management**  
-  Store, edit, and tag your favorite recipes with ingredients, steps, and photos.
+  Store, edit, and tag your favorite recipes with ingredients, directions and more.
 
 - **Drag & Drop Grocery List Editor**  
   Create and organize grocery lists with an intuitive drag-and-drop interface.
 
 - **Meal Planning**  
-  Plan meals for the week and connect them to your grocery workflow.
-
-- **Tagging System**  
-  Flexible tagging for recipes, ingredients, and more.
-
-- **Docker Support**  
-  Easily run the full stack using Docker for simplified deployment and testing.
+  Easy to use meal planning calendar with the ability to quickly add meals to a grocery list.
 
 ---
 
 ## Tech Stack
 
-- **Frontend**: Blazor WebAssembly (.NET 8), MudBlazor  
+- **Frontend**: Blazor Server (.NET 9), MudBlazor  
 - **Backend**: ASP.NET Core API  
 - **Database**: SQLite, EF Core  
 - **Architecture**: Vertical Slice Architecture  
-- **Containerization**: Docker, Docker Compose
+- **Containerization Support**: Docker
