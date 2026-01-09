@@ -28,6 +28,20 @@
 
 ---
 
+## Screenshots
+
+![Setup](Media/Setup.png)
+
+![Meal Planner](Media/MealPlanner.png)
+
+![Grocery List](Media/GroceryList.png)
+
+![Recipes](Media/Recipes.png)
+
+![Edit Aisle](Media/EditAisle.png)
+
+---
+
 ## Tech Stack
 
 - **Frontend**: Blazor WebAssembly (.NET 8), MudBlazor  
